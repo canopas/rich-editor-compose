@@ -1,5 +1,6 @@
 package com.canopas.editor.ui
 
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
@@ -33,28 +34,21 @@ data class RichTextValue internal constructor(
         }
 
     private val annotatedString
-        get() = AnnotatedString(
-            text = textFieldValue.text,
-            spanStyles = parts.map { part ->
+        get() = buildAnnotatedString {
+            append(textFieldValue.text)
+            parts.map { part ->
                 val spanStyle = part.styles.fold(SpanStyle()) { spanStyle, richTextStyle ->
                     richTextStyle.applyStyle(spanStyle)
                 }
 
-                AnnotatedString.Range(
-                    item = spanStyle,
+                addStyle(
+                    style = spanStyle,
                     start = part.fromIndex,
                     end = part.toIndex + 1,
                 )
-            },
+            }
+        }
 
-        )
-
-    /**
-     * Toggle a style
-     * @param style the style to toggle
-     * @return a new [RichTextValue] with the style toggled
-     * @see RichTextStyle
-     */
     fun toggleStyle(style: RichTextStyle): RichTextValue {
         return if (currentStyles.contains(style)) {
             removeStyle(style)
@@ -63,12 +57,6 @@ data class RichTextValue internal constructor(
         }
     }
 
-    /**
-     * Add a style to the current styles
-     * @param style the style to add
-     * @return a new [RichTextValue] with the new style added
-     * @see RichTextStyle
-     */
     fun addStyle(vararg style: RichTextStyle): RichTextValue {
         return RichTextValueBuilder
             .from(this)
@@ -76,12 +64,6 @@ data class RichTextValue internal constructor(
             .build()
     }
 
-    /**
-     * Remove a style from the current styles
-     * @param style the style to remove
-     * @return a new [RichTextValue] with the style removed
-     * @see RichTextStyle
-     */
     fun removeStyle(vararg style: RichTextStyle): RichTextValue {
         return RichTextValueBuilder
             .from(this)
@@ -97,35 +79,12 @@ data class RichTextValue internal constructor(
             .build()
     }
 
-    /**
-     * Update the current styles
-     * @param newStyles the new styles
-     * @return a new [RichTextValue] with the new styles
-     * @see RichTextStyle
-     */
-    fun updateStyles(newStyles: Set<RichTextStyle>): RichTextValue {
-        return RichTextValueBuilder
-            .from(this)
-            .updateStyles(newStyles)
-            .build()
-    }
-
-    fun clearStyles(): RichTextValue {
-        return RichTextValueBuilder
-            .from(this)
-            .clearStyles()
-            .build()
-    }
-
-    /**
-     * Update the text field value and update the rich text parts accordingly to the new text field value
-     * @param newTextFieldValue the new text field value
-     * @return a new [RichTextValue] with the new text field value
-     */
     internal fun updateTextFieldValue(newTextFieldValue: TextFieldValue): RichTextValue {
         return RichTextValueBuilder
             .from(this)
             .updateTextFieldValue(newTextFieldValue)
             .build()
     }
+
+    fun hasStyle(style: RichTextStyle) = currentStyles.contains(style)
 }
