@@ -1,9 +1,6 @@
 package com.canopas.editor.ui
 
-import android.util.Log
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-
 import kotlin.math.max
 import kotlin.math.min
 
@@ -16,76 +13,151 @@ internal class RichTextValueBuilder {
     private var textFieldValue: TextFieldValue = TextFieldValue()
     private val parts = mutableListOf<RichTextPart>()
     private val currentStyles = mutableSetOf<RichTextStyle>()
+    private var isSelected = false
 
-    /**
-     * Set the text field value
-     * @param textFieldValue the text field value to set
-     * @return a new [RichTextValueBuilder] with the new text field value
-     */
+    fun setIsSelected(isSelected: Boolean): RichTextValueBuilder {
+        this.isSelected = isSelected
+        return this
+    }
+
     fun setTextFieldValue(textFieldValue: TextFieldValue): RichTextValueBuilder {
         this.textFieldValue = textFieldValue
         return this
     }
 
-    /**
-     * Set the parts of the text
-     * @param parts the parts to set
-     * @return a new [RichTextValueBuilder] with the new parts
-     * @see RichTextPart
-     */
     fun setParts(parts: List<RichTextPart>): RichTextValueBuilder {
         this.parts.clear()
         this.parts.addAll(parts)
         return this
     }
 
-    /**
-     * Set the current styles
-     * @param currentStyles the styles to set
-     * @return a new [RichTextValueBuilder] with the new styles
-     * @see RichTextStyle
-     */
     fun setCurrentStyles(currentStyles: Set<RichTextStyle>): RichTextValueBuilder {
         this.currentStyles.clear()
         this.currentStyles.addAll(currentStyles)
         return this
     }
 
-    /**
-     * Add a style to the current styles
-     * @param style the style to add
-     * @return a new [RichTextValueBuilder] with the new style
-     * @see RichTextStyle
-     */
     fun addStyle(vararg style: RichTextStyle): RichTextValueBuilder {
         currentStyles.addAll(style)
         applyStylesToSelectedText(*style)
         return this
     }
 
-    /**
-     * Remove a style from the current styles
-     * @param style the style to remove
-     * @return a new [RichTextValueBuilder] without the style
-     * @see RichTextStyle
-     */
     fun removeStyle(vararg style: RichTextStyle): RichTextValueBuilder {
         currentStyles.removeAll(style.toSet())
         removeStylesFromSelectedText(*style)
         return this
     }
 
-    /**
-     * Update the current styles
-     * @param newStyles the new styles
-     * @return a new [RichTextValueBuilder] with the new styles
-     * @see RichTextStyle
-     */
     fun updateStyles(newStyles: Set<RichTextStyle>): RichTextValueBuilder {
         currentStyles.clear()
         currentStyles.addAll(newStyles)
         applyStylesToSelectedText(*newStyles.toTypedArray())
         return this
+    }
+
+    fun build(): RichTextValue {
+        val value = RichTextValue(
+            textFieldValue = textFieldValue,
+            currentStyles = currentStyles,
+            parts = parts,
+        )
+        value.isSelected = isSelected
+        return value
+    }
+
+    private fun applyStylesToSelectedText(vararg style: RichTextStyle) {
+        updateSelectedTextParts { part ->
+            val styles = part.styles.toMutableSet()
+            styles.addAll(style.toSet())
+
+            part.copy(
+                styles = styles
+            )
+        }
+    }
+
+    private fun removeStylesFromSelectedText(vararg style: RichTextStyle) {
+        updateSelectedTextParts { part ->
+            val styles = part.styles.toMutableSet()
+            styles.removeAll(style.toSet())
+
+            part.copy(
+                styles = styles
+            )
+        }
+    }
+
+    private fun updateSelectedTextParts(
+        update: (part: RichTextPart) -> RichTextPart
+    ) {
+        if (textFieldValue.selection.collapsed) {
+            return
+        }
+
+        val fromIndex = textFieldValue.selection.min
+        val toIndex = textFieldValue.selection.max
+
+        val selectedParts = parts.filter { part ->
+            part.fromIndex < toIndex && part.toIndex >= fromIndex
+        }
+
+        if (selectedParts.isEmpty()) {
+            parts.add(RichTextPart(fromIndex = fromIndex, toIndex - 1, currentStyles))
+            return
+        }
+
+        selectedParts.forEach { part ->
+            val index = parts.indexOf(part)
+            if (index !in parts.indices) return@forEach
+
+            if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
+                parts[index] = part.copy(
+                    toIndex = fromIndex - 1
+                )
+                parts.add(
+                    index + 1,
+                    update(
+                        part.copy(
+                            fromIndex = fromIndex,
+                            toIndex = toIndex - 1
+                        )
+                    )
+                )
+                parts.add(
+                    index + 2,
+                    part.copy(
+                        fromIndex = toIndex,
+                    )
+                )
+            } else if (part.fromIndex < fromIndex) {
+                parts[index] = part.copy(
+                    toIndex = fromIndex - 1
+                )
+                parts.add(
+                    index + 1,
+                    update(
+                        part.copy(
+                            fromIndex = fromIndex,
+                        )
+                    )
+                )
+            } else if (part.toIndex >= toIndex) {
+                parts[index] = update(
+                    part.copy(
+                        toIndex = toIndex - 1
+                    )
+                )
+                parts.add(
+                    index + 1,
+                    part.copy(
+                        fromIndex = toIndex,
+                    )
+                )
+            } else {
+                parts[index] = update(part)
+            }
+        }
     }
 
     /**
@@ -97,6 +169,14 @@ internal class RichTextValueBuilder {
         currentStyles.clear()
         removeAllStylesFromSelectedText()
         return this
+    }
+
+    private fun removeAllStylesFromSelectedText() {
+        updateSelectedTextParts { part ->
+            part.copy(
+                styles = emptySet()
+            )
+        }
     }
 
     /**
@@ -132,14 +212,7 @@ internal class RichTextValueBuilder {
         return this
     }
 
-    /**
-     * Update the text field value and update the rich text parts accordingly to the new text field value
-     * @param newTextFieldValue the new text field value
-     * @return a new [RichTextValueBuilder] with the new text field value and parts
-     */
     fun updateTextFieldValue(newValue: TextFieldValue): RichTextValueBuilder {
-        // Workaround to add unordered list support, it's going to be improved,
-        // But for now if it works, it works :D
         var newTextFieldValue = newValue
         if (newTextFieldValue.text.length > textFieldValue.text.length) {
             newTextFieldValue = handleAddingCharacters(newTextFieldValue)
@@ -155,23 +228,23 @@ internal class RichTextValueBuilder {
             .setTextFieldValue(newTextFieldValue)
     }
 
-    /**
-     * Builds a [RichTextValue] from the current state of the builder.
-     */
-    fun build(): RichTextValue {
-        return RichTextValue(
-            textFieldValue = textFieldValue,
-            currentStyles = currentStyles,
-            parts = parts,
-        )
+    private fun updateCurrentStyles(
+        newTextFieldValue: TextFieldValue
+    ) {
+        val newStyles = parts
+            .firstOrNull {
+                if (newTextFieldValue.selection.min == 0 && it.fromIndex == 0) {
+                    return@firstOrNull true
+                }
+                (newTextFieldValue.selection.min - 1) in (it.fromIndex..it.toIndex)
+            }
+            ?.styles
+            ?: currentStyles
+
+        setCurrentStyles(newStyles.toSet())
     }
 
-    /**
-     * Handles adding characters to the text field.
-     * This method will update the [parts] list to reflect the new text field value.
-     *
-     * @param newValue the new text field value.
-     */
+
     private fun handleAddingCharacters(
         newValue: TextFieldValue,
     ): TextFieldValue {
@@ -179,24 +252,8 @@ internal class RichTextValueBuilder {
         var typedChars = newTextFieldValue.text.length - textFieldValue.text.length
         val startTypeIndex = newTextFieldValue.selection.min - typedChars
 
-        // Workaround to add unordered list support, it's going to be changed in the future
-        // when I'm going to add ordered list support but for now if it works, it works :D
-        if (
-            newTextFieldValue.text.getOrNull(startTypeIndex) == '\n'
-        ) {
-            Log.d("XXX", "detect new line")
+        if (newTextFieldValue.text.getOrNull(startTypeIndex) == '\n') {
             removeTitleStylesIfAny()
-//            var newText = newTextFieldValue.text
-//            newText = newText.removeRange(startTypeIndex - 1..startTypeIndex)
-//            val firstHalf = newText.substring(0..startTypeIndex-2)
-//            val secondHalf = newText.substring(startTypeIndex-1..newText.lastIndex)
-//            val unorderedListPrefix = "  •  "
-//            newText = firstHalf + unorderedListPrefix + secondHalf
-//            typedChars+=3
-//            newTextFieldValue = newTextFieldValue.copy(
-//                text = newText,
-//                selection = TextRange(startTypeIndex + typedChars)
-//            )
         }
 
         val startRichTextPartIndex = parts.indexOfFirst {
@@ -288,7 +345,7 @@ internal class RichTextValueBuilder {
 
     private fun removeTitleStylesIfAny() {
         val hasTitleStyle = currentStyles.any { it.isTitleStyles() }
-        if(hasTitleStyle) clearStyles()
+        if (hasTitleStyle) clearStyles()
     }
 
     /**
@@ -430,143 +487,12 @@ internal class RichTextValueBuilder {
         removedIndexes.reversed().forEach { parts.removeAt(it) }
     }
 
-    /**
-     * Updates the current styles based on the [newTextFieldValue].
-     * @param newTextFieldValue The new [TextFieldValue].
-     */
-    private fun updateCurrentStyles(
-        newTextFieldValue: TextFieldValue
-    ) {
-        val newStyles = parts
-            .firstOrNull {
-                if (newTextFieldValue.selection.min == 0 && it.fromIndex == 0) {
-                    return@firstOrNull true
-                }
-                (newTextFieldValue.selection.min - 1) in (it.fromIndex..it.toIndex)
-            }
-            ?.styles
-            ?: currentStyles
-
-        setCurrentStyles(newStyles.toSet())
-    }
-
-    /**
-     * Applies [style] to the selected text.
-     * @param style The [RichTextStyle] to apply.
-     */
-    private fun applyStylesToSelectedText(vararg style: RichTextStyle) {
-        updateSelectedTextParts { part ->
-            val styles = part.styles.toMutableSet()
-            styles.addAll(style.toSet())
-
-            part.copy(
-                styles = styles
-            )
-        }
-    }
-
-    /**
-     * Removes [style] from the selected text.
-     * @param style The [RichTextStyle] to remove.
-     */
-    private fun removeStylesFromSelectedText(vararg style: RichTextStyle) {
-        updateSelectedTextParts { part ->
-            val styles = part.styles.toMutableSet()
-            styles.removeAll(style.toSet())
-
-            part.copy(
-                styles = styles
-            )
-        }
-    }
-
-    /**
-     * Removes all styles from the selected text.
-     */
-    private fun removeAllStylesFromSelectedText() {
-        updateSelectedTextParts { part ->
-            part.copy(
-                styles = emptySet()
-            )
-        }
-    }
-
-    /**
-     * Updates the selected text parts.
-     * @param update The update function.
-     */
-    private fun updateSelectedTextParts(
-        update: (part: RichTextPart) -> RichTextPart
-    ) {
-        if (textFieldValue.selection.collapsed) {
-            return
-        }
-
-        val fromIndex = textFieldValue.selection.min
-        val toIndex = textFieldValue.selection.max
-
-        val selectedParts = parts.filter { part ->
-            part.fromIndex < toIndex && part.toIndex >= fromIndex
-        }
-
-        selectedParts.forEach { part ->
-            val index = parts.indexOf(part)
-            if (index !in parts.indices) return@forEach
-
-            if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
-                parts[index] = part.copy(
-                    toIndex = fromIndex - 1
-                )
-                parts.add(
-                    index + 1,
-                    update(
-                        part.copy(
-                            fromIndex = fromIndex,
-                            toIndex = toIndex - 1
-                        )
-                    )
-                )
-                parts.add(
-                    index + 2,
-                    part.copy(
-                        fromIndex = toIndex,
-                    )
-                )
-            } else if (part.fromIndex < fromIndex) {
-                parts[index] = part.copy(
-                    toIndex = fromIndex - 1
-                )
-                parts.add(
-                    index + 1,
-                    update(
-                        part.copy(
-                            fromIndex = fromIndex,
-                        )
-                    )
-                )
-            } else if (part.toIndex >= toIndex) {
-                parts[index] = update(
-                    part.copy(
-                        toIndex = toIndex - 1
-                    )
-                )
-                parts.add(
-                    index + 1,
-                    part.copy(
-                        fromIndex = toIndex,
-                    )
-                )
-            } else {
-                parts[index] = update(part)
-            }
-        }
-    }
-
     companion object {
         fun from(richTextValue: RichTextValue): RichTextValueBuilder {
             return RichTextValueBuilder()
                 .setTextFieldValue(richTextValue.textFieldValue)
                 .setParts(richTextValue.parts)
+                .setIsSelected(richTextValue.isSelected)
                 .setCurrentStyles(richTextValue.currentStyles)
         }
     }

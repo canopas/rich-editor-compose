@@ -4,7 +4,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,11 +34,7 @@ fun RichTextField(
 
     BasicTextField(
         value = value.textFieldValue,
-        onValueChange = {
-            onValueChange(
-                value.updateTextFieldValue(it)
-            )
-        },
+        onValueChange = { onValueChange(value.updateTextFieldValue(it)) },
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,

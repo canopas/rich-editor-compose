@@ -7,16 +7,13 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,11 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.canopas.editor.ui.RichTextValue
-import com.canopas.editor.ui.RichTextField
-import com.example.texteditor.ui.theme.TextEditorTheme
-
+import com.canopas.editor.ui.RichTextEditor
 import com.canopas.editor.ui.RichTextStyle
+import com.canopas.editor.ui.RichTextValue
+import com.canopas.editor.ui.TextEditorValue
+import com.canopas.editor.ui.rememberEditorState
+import com.example.texteditor.ui.theme.TextEditorTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,47 +58,31 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-val md = """
-Bold with **asterisks** 
-# Header 1
-## Header 2
-    """.trimIndent()
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     TextEditorTheme {
         var basicRichTextValue by remember { mutableStateOf(RichTextValue()) }
-
+        var state by rememberEditorState()
 
         Column {
-            StyleContainer(basicRichTextValue, onValueChange = { basicRichTextValue = it })
 
-            Spacer(modifier = Modifier.height(10.dp))
+            StyleContainer(state, onValueChange = {
+                state = it
+            })
 
-            RichTextField(
-                value = basicRichTextValue,
-                onValueChange = { basicRichTextValue = it },
+//            RichTextField(
+//                value = basicRichTextValue,
+//                onValueChange = { basicRichTextValue = it },)
+
+            RichTextEditor(
+                state = state,
+                onValueChange = { state = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-                decorationBox = { content ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sizeIn(minHeight = 100.dp)
-                            .border(
-                                width = 2.dp,
-                                color = Color.LightGray,
-                                shape = RoundedCornerShape(size = 2.dp)
-                            )
-                            .padding(all = 16.dp),
-                    ) {
-                        content()
-                    }
-
-                }
+                    .weight(1f)
+                    .border(1.dp, Color.Gray)
+                    .padding(5.dp)
             )
         }
     }
@@ -109,12 +91,13 @@ fun GreetingPreview() {
 
 @Composable
 fun StyleContainer(
-    value: RichTextValue,
-    onValueChange: (RichTextValue) -> Unit,
+    value: TextEditorValue,
+    onValueChange: (TextEditorValue) -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
+            .height(52.dp)
             .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -144,11 +127,14 @@ fun StyleContainer(
 }
 
 @Composable
-fun TitleStyleButton(value: RichTextValue, onValueChange: (RichTextValue) -> Unit) {
+fun TitleStyleButton(
+    value: TextEditorValue,
+    onValueChange: (TextEditorValue) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
 
     val onItemSelected = { style: RichTextStyle ->
-        onValueChange(value.setTitleStyles(setOf(style)))
+        onValueChange(value.updateStyles(setOf(style)))
         expanded = false
     }
 
@@ -216,20 +202,20 @@ fun DropDownItem(
 fun StyleButton(
     @DrawableRes icon: Int,
     style: RichTextStyle,
-    value: RichTextValue,
-    onValueChange: (RichTextValue) -> Unit
+    value: TextEditorValue,
+    onValueChange: (TextEditorValue) -> Unit,
 ) {
     IconButton(
         modifier = Modifier
             .padding(2.dp)
-            .size(48.dp)
-            .background(
-                color = if (value.hasStyle(style)) {
-                    Color.Gray.copy(alpha = 0.2f)
-                } else {
-                    Color.Transparent
-                }, shape = RoundedCornerShape(6.dp)
-            ),
+            .size(48.dp),
+//            .background(
+//                color = if (value.hasStyle(style)) {
+//                    Color.Gray.copy(alpha = 0.2f)
+//                } else {
+//                    Color.Transparent
+//                }, shape = RoundedCornerShape(6.dp)
+//            )
         onClick = {
             onValueChange(value.toggleStyle(style))
         },
