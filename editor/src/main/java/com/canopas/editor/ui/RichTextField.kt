@@ -12,9 +12,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import com.canopas.editor.ui.model.RichTextValue
 
 @Composable
-fun RichTextField(
+internal fun RichTextField(
     value: RichTextValue,
     onValueChange: (RichTextValue) -> Unit,
     modifier: Modifier = Modifier,

@@ -25,6 +25,10 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.canopas.editor.ui.data.ContentType
+import com.canopas.editor.ui.data.TextEditorValue
+import com.canopas.editor.ui.model.ImageContentValue
+import com.canopas.editor.ui.model.RichTextValue
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -68,7 +72,7 @@ fun RichTextEditor(
 }
 
 @Composable
-fun ImageComponent(
+internal fun ImageComponent(
     contentValue: ImageContentValue,
     onValueChange: (ImageContentValue) -> Unit
 ) {
@@ -86,7 +90,7 @@ fun ImageComponent(
 }
 
 @Composable
-fun TextFieldComponent(
+internal fun TextFieldComponent(
     richText: RichTextValue,
     onValueChange: (RichTextValue) -> Unit
 ) {

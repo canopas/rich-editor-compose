@@ -1,6 +1,7 @@
-package com.canopas.editor.ui
+package com.canopas.editor.ui.data
 
 import androidx.compose.ui.text.input.TextFieldValue
+import com.canopas.editor.ui.model.RichTextValue
 import kotlin.math.max
 import kotlin.math.min
 
