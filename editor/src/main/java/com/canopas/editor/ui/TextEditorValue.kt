@@ -9,13 +9,24 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 
 @Immutable
 class TextEditorValue internal constructor(internal val values: MutableList<ContentValue> = mutableListOf()) {
-    fun update(value: RichTextValue, index: Int): TextEditorValue {
+    fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1) {
             values[index] = value
             Log.d("XXX", "value ${values[index]}")
+        }
+        return TextEditorValue(ArrayList(values))
+    }
+
+    private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
+        if (index != -1) {
+            values.add(index, value)
+        } else {
+            values.add(value)
         }
         return TextEditorValue(ArrayList(values))
     }
@@ -58,6 +69,12 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
         return this
     }
+
+    fun addImage(uri: Uri): TextEditorValue {
+        val imageContentValue = ImageContentValue(uri = uri)
+        val richTextValue = RichTextValue().apply { isSelected = true }
+        return add(imageContentValue).add(richTextValue)
+    }
 }
 
 enum class ContentType {
@@ -72,8 +89,14 @@ abstract class ContentValue {
 @Immutable
 data class ImageContentValue internal constructor(
     internal val tag: String = "${System.currentTimeMillis()}",
-    internal val uri: Uri
+    internal val uri: Uri,
+    internal val size: DpSize = DpSize(100.dp, 100.dp)
 ) : ContentValue() {
+
+    fun toggleSelection() {
+        isSelected = !isSelected
+    }
+
     override val type: ContentType = ContentType.IMAGE
     override var isSelected: Boolean = false
 }

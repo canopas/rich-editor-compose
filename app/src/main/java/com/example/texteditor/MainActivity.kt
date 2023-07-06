@@ -2,7 +2,10 @@ package com.example.texteditor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -123,6 +126,12 @@ fun StyleContainer(
             value = value,
             onValueChange = onValueChange
         )
+
+        ImagePicker(
+            value = value,
+            onValueChange = onValueChange
+        )
+
     }
 }
 
@@ -197,6 +206,32 @@ fun DropDownItem(
     )
 }
 
+@Composable
+fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit) {
+
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let { onValueChange(value.addImage(it)) }
+        }
+    )
+
+    IconButton(
+        modifier = Modifier
+            .padding(2.dp)
+            .size(48.dp),
+        onClick = {
+            pickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_image), contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
 
 @Composable
 fun StyleButton(
