@@ -35,7 +35,9 @@ internal fun RichTextField(
 
     BasicTextField(
         value = value.textFieldValue,
-        onValueChange = { onValueChange(value.updateTextFieldValue(it)) },
+        onValueChange = {
+            onValueChange(value.updateTextFieldValue(it))
+        },
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,
