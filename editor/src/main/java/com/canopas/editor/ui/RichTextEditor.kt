@@ -5,14 +5,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -33,6 +36,7 @@ import com.canopas.editor.ui.data.ContentType
 import com.canopas.editor.ui.data.TextEditorValue
 import com.canopas.editor.ui.model.ImageContentValue
 import com.canopas.editor.ui.model.RichTextValue
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -52,9 +56,12 @@ fun RichTextEditor(
 ) {
     //   Log.d("XXX", "state ${state.values[0]}")
 
-    Column(modifier) {
+    val scrollState = rememberScrollState()
+
+
+    Column(modifier.verticalScroll(scrollState)) {
         state.values.forEachIndexed { index, value ->
-           // Log.d("XXX", "isFocused ${value.isFocused} index $index ")
+            // Log.d("XXX", "isFocused ${value.isFocused} index $index ")
 
             when (value.type) {
                 ContentType.RICH_TEXT -> {
@@ -78,6 +85,10 @@ fun RichTextEditor(
             }
         }
     }
+    val scope = rememberCoroutineScope()
+    SideEffect {
+        scope.launch { scrollState.scrollTo(scrollState.maxValue) }
+    }
 }
 
 @Composable
@@ -89,8 +100,8 @@ internal fun ImageComponent(
         model = contentValue.uri,
         contentDescription = null,
         modifier = Modifier
-            .size(contentValue.size)
-            .border(1.dp, if (contentValue.isFocused) Color.Green else Color.Transparent)
+            .wrapContentSize()
+            .border(1.dp, if (contentValue.isFocused) Color.Blue else Color.Transparent)
             .clickable {
                 onToggleSelection(!contentValue.isFocused)
             },
