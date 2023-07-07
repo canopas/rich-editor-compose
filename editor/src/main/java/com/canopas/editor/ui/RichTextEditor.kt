@@ -1,5 +1,6 @@
 package com.canopas.editor.ui
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +63,7 @@ fun RichTextEditor(
 
     Column(modifier.verticalScroll(scrollState)) {
         state.values.forEachIndexed { index, value ->
-            // Log.d("XXX", "isFocused ${value.isFocused} index $index ")
+            Log.d("AAA", "RENDER index $index ")
 
             when (value.type) {
                 ContentType.RICH_TEXT -> {
@@ -143,7 +145,7 @@ internal fun TextFieldComponent(
         //cursorBrush = if (richText.isFocused) SolidColor(Color.Black) else SolidColor(Color.Transparent)
     )
 
-    SideEffect {
+    LaunchedEffect(key1 = richText.isFocused, block = {
         if (richText.isFocused) {
             //  Log.d("XXX", "requestFocus")
             focusRequester.requestFocus()
@@ -151,7 +153,7 @@ internal fun TextFieldComponent(
             //  Log.d("XXX", "freeFocus")
             focusRequester.freeFocus()
         }
-    }
+    })
 }
 
 @Composable

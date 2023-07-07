@@ -1,5 +1,6 @@
 package com.canopas.editor.ui.model
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -23,8 +24,14 @@ internal data class RichTextValue internal constructor(
 ) : ContentValue() {
 
     constructor(
-        text: String = ""
-    ) : this(textFieldValue = TextFieldValue(text = text))
+        text: String = "",
+        currentStyles: MutableSet<RichTextStyle> = mutableSetOf(),
+        parts: MutableList<RichTextPart> = mutableListOf()
+    ) : this(
+        textFieldValue = TextFieldValue(text = text, selection = TextRange(text.length)),
+        currentStyles,
+        parts
+    )
 
     val text get() = textFieldValue.text
 
@@ -251,7 +258,7 @@ internal data class RichTextValue internal constructor(
         }
     }
 
-    private fun handleRemovingCharacters(
+    fun handleRemovingCharacters(
         newTextFieldValue: TextFieldValue
     ) {
         val removedChars = textFieldValue.text.length - newTextFieldValue.text.length
@@ -385,7 +392,7 @@ internal data class RichTextValue internal constructor(
     }
 
 
-    private fun collapseParts(
+    fun collapseParts(
         textLastIndex: Int
     ) {
         val startRangeMap = mutableMapOf<Int, Int>()
@@ -445,6 +452,63 @@ internal data class RichTextValue internal constructor(
         }
 
         removedIndexes.reversed().forEach { parts.removeAt(it) }
+    }
+
+    internal fun split(cursorPosition: Int): Pair<RichTextValue, RichTextValue> {
+        if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
+
+        val copyParts = ArrayList(parts)
+        val subtext1 = text.substring(0, cursorPosition)
+        val subtext2 = text.substring(cursorPosition)
+        Log.d(
+            "AAA",
+            "split BEFORE $parts POSITION $cursorPosition size ${subtext1.length}:${subtext2.length}"
+        )
+
+        val textParts1 = removeParts(parts, cursorPosition).toMutableList()
+
+        this.textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
+        this.parts.clear()
+        this.parts.addAll(textParts1)
+
+        val newList = moveParts(copyParts, cursorPosition).toMutableList()
+        val textValue2 =
+            RichTextValue(text = subtext2, currentStyles, parts = newList).apply {
+                isFocused = true
+            }
+
+        Log.d("AAA", "split at FIRST --- $parts")
+
+        Log.d("AAA", "split SECOND --- $newList")
+
+        return Pair(this, textValue2)
+    }
+
+    private fun removeParts(
+        originalList: List<RichTextPart>,
+        cursorPosition: Int
+    ): List<RichTextPart> {
+        return originalList.filter { it.fromIndex <= cursorPosition - 1 }
+            .map { textPart ->
+                val updatedFromIndex = textPart.fromIndex
+                val updatedToIndex =
+                    if (cursorPosition > textPart.toIndex) textPart.toIndex else cursorPosition - 1
+                RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
+            }
+    }
+
+    private fun moveParts(
+        originalList: List<RichTextPart>,
+        cursorPosition: Int
+    ): List<RichTextPart> {
+        return originalList.filter { it.toIndex >= cursorPosition }
+            .map { textPart ->
+                val updatedFromIndex =
+                    if (cursorPosition >= textPart.fromIndex) 0 else textPart.fromIndex - cursorPosition
+                val updatedToIndex =
+                    textPart.toIndex - cursorPosition
+                RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
+            }
     }
 
     internal fun merge(nextItem: RichTextValue): RichTextValue {

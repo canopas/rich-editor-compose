@@ -92,6 +92,8 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         values.forEach { it.isFocused = false }
     }
 
+    private fun focusedRichText() = getRichTexts().firstOrNull { it.isFocused }
+
     fun addImage(uri: Uri): TextEditorValue {
         val imageContentValue = ImageContentValue(uri = uri)
         val richTextValue = RichTextValue().apply { isFocused = true }
@@ -105,10 +107,32 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             values.removeAll(range)
         }
 
+        val focusedRichText = focusedRichText()
+        if (focusedRichText != null && focusedRichText.textFieldValue.text.isNotEmpty()) {
+            return splitAndAdd(focusedRichText, imageContentValue)
+        }
+
         clearFocus()
 
         values.add(imageContentValue)
         return add(richTextValue)
+    }
+
+    private fun splitAndAdd(
+        focusedRichText: RichTextValue,
+        imageContentValue: ImageContentValue
+    ): TextEditorValue {
+        val cursorPosition = focusedRichText.textFieldValue.selection.end
+        val index = values.indexOf(focusedRichText)
+        if (cursorPosition >= 0) {
+            clearFocus()
+            val (value1, value2) = focusedRichText.split(cursorPosition)
+            values[index] = value1
+            values.add(index + 1, imageContentValue)
+            return add(value2, index + 2)
+        }
+
+        return this
     }
 
     fun focusUp(index: Int): TextEditorValue {
