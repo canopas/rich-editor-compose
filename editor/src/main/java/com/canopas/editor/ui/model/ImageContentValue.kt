@@ -15,9 +15,9 @@ internal data class ImageContentValue internal constructor(
 ) : ContentValue() {
 
     fun toggleSelection() {
-        isSelected = !isSelected
+        isFocused = !isFocused
     }
 
     override val type: ContentType = ContentType.IMAGE
-    override var isSelected: Boolean = false
+    override var isFocused: Boolean = false
 }

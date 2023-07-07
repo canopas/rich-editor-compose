@@ -1,7 +1,9 @@
 package com.canopas.editor.ui.model
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
@@ -25,8 +27,10 @@ internal data class RichTextValue internal constructor(
         text: String = ""
     ) : this(textFieldValue = TextFieldValue(text = text))
 
+    val text get() = textFieldValue.text
+
     override val type: ContentType = ContentType.RICH_TEXT
-    override var isSelected: Boolean = false
+    override var isFocused: Boolean = false
 
     internal val visualTransformation
         get() = VisualTransformation {
@@ -118,12 +122,13 @@ internal data class RichTextValue internal constructor(
         newValue: TextFieldValue,
     ): TextFieldValue {
 
-        val currentStyles = currentStyles.toSet()
+        var currentStyles = currentStyles.toSet()
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
         if (newValue.text.getOrNull(startTypeIndex) == '\n') {
             removeTitleStylesIfAny()
+            currentStyles = setOf()
         }
 
         val startRichTextPartIndex = parts.indexOfFirst {
@@ -234,7 +239,7 @@ internal data class RichTextValue internal constructor(
         if (hasTitleStyle) clearStyles()
     }
 
-    fun clearStyles() {
+    private fun clearStyles() {
         currentStyles.clear()
         removeAllStylesFromSelectedText()
     }
@@ -443,6 +448,19 @@ internal data class RichTextValue internal constructor(
         removedIndexes.reversed().forEach { parts.removeAt(it) }
     }
 
+    internal fun merge(nextItem: RichTextValue): RichTextValue {
+        val text = this.text + nextItem.text
+        val existingParts = this.parts
+        this.parts.addAll(nextItem.parts)
+        Log.d(
+            "XXX",
+            "from ${existingParts.lastIndex} to ${parts.lastIndex} by ${this.text.length} new ${text.length}"
+        )
+        moveParts(existingParts.lastIndex, this.parts.lastIndex, this.text.length)
+        this.textFieldValue = TextFieldValue(text, selection = TextRange(text.length))
+        return this
+    }
 
     fun hasStyle(style: RichTextStyle) = currentStyles.contains(style)
+
 }
