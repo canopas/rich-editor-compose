@@ -113,10 +113,10 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
     fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
-        if (index != -1) {
+        if (index != -1 && index < values.size) {
             values[index].isFocused = false
         }
-        if (upIndex != -1) {
+        if (upIndex != -1 && upIndex < values.size) {
             val item = values[upIndex]
             if (item.type == ContentType.IMAGE && item.isFocused) {
                 return handleRemoveAndMerge(upIndex)
@@ -137,12 +137,11 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             if ((nextItem as RichTextValue).text.isNotEmpty()) {
                 val value = (previousItem as RichTextValue).merge(nextItem)
                 update(value, index - 1)
-                return remove(nextItem)
             } else {
                 previousItem.isFocused = true
                 update(previousItem, index - 1)
-                return remove(nextItem)
             }
+            return remove(nextItem)
         }
 
         return this

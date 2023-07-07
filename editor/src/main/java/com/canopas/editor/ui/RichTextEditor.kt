@@ -1,6 +1,5 @@
 package com.canopas.editor.ui
 
-import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,7 +54,7 @@ fun RichTextEditor(
 
     Column(modifier) {
         state.values.forEachIndexed { index, value ->
-            Log.d("XXX", "isFocused ${value.isFocused} index $index ")
+           // Log.d("XXX", "isFocused ${value.isFocused} index $index ")
 
             when (value.type) {
                 ContentType.RICH_TEXT -> {
@@ -120,15 +119,14 @@ internal fun TextFieldComponent(
                 onFocusChange(it.isFocused)
             }
             .onKeyEvent { event ->
-                Log.d("XXX", "event ${event.key}")
                 if (event.type == KeyEventType.KeyUp &&
-                    (event.key == Key.Backspace || event.key == Key.Delete) &&
-                    richText.text.isEmpty()
+                    (event.key == Key.Backspace)
                 ) {
-                    onFocusUp()
-                    return@onKeyEvent true
+                    if (richText.text.isEmpty() || richText.textFieldValue.selection.start == 0) {
+                        onFocusUp()
+                        return@onKeyEvent true
+                    }
                 }
-
                 false
             },
         //cursorBrush = if (richText.isFocused) SolidColor(Color.Black) else SolidColor(Color.Transparent)
@@ -136,10 +134,10 @@ internal fun TextFieldComponent(
 
     SideEffect {
         if (richText.isFocused) {
-            Log.d("XXX", "requestFocus")
+            //  Log.d("XXX", "requestFocus")
             focusRequester.requestFocus()
         } else {
-            Log.d("XXX", "freeFocus")
+            //  Log.d("XXX", "freeFocus")
             focusRequester.freeFocus()
         }
     }

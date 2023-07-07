@@ -1,6 +1,5 @@
 package com.canopas.editor.ui.model
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -449,14 +448,10 @@ internal data class RichTextValue internal constructor(
     }
 
     internal fun merge(nextItem: RichTextValue): RichTextValue {
-        val text = this.text + nextItem.text
-        val existingParts = this.parts
+        val text = this.text + "\n" + nextItem.text
+        val existingParts = ArrayList(this.parts)
         this.parts.addAll(nextItem.parts)
-        Log.d(
-            "XXX",
-            "from ${existingParts.lastIndex} to ${parts.lastIndex} by ${this.text.length} new ${text.length}"
-        )
-        moveParts(existingParts.lastIndex, this.parts.lastIndex, this.text.length)
+        moveParts(existingParts.size, this.parts.size, this.text.length + 1)
         this.textFieldValue = TextFieldValue(text, selection = TextRange(text.length))
         return this
     }
