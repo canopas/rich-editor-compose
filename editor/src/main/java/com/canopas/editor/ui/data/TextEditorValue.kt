@@ -1,17 +1,11 @@
 package com.canopas.editor.ui.data
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.Immutable
-import com.canopas.editor.ui.model.ImageContentValue
-import com.canopas.editor.ui.model.RichTextValue
+import com.canopas.editor.ui.model.RichTextStyle
 
 @Immutable
 class TextEditorValue internal constructor(internal val values: MutableList<ContentValue> = mutableListOf()) {
-
-    init {
-        Log.d("XXX", "total values ${values.size}")
-    }
 
     fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
@@ -41,15 +35,10 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             values.add(value)
         }
 
-        Log.d("XXX", "add ${value.isFocused}")
-
-
         return TextEditorValue(ArrayList(values))
     }
 
     fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
-        //   Log.d("XXX", "setFocused ${values.size}")
-
         if (index == -1 || index >= values.size) return this
         if (isFocused) clearFocus()
         val value = values[index]

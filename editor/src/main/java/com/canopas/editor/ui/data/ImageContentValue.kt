@@ -1,11 +1,9 @@
-package com.canopas.editor.ui.model
+package com.canopas.editor.ui.data
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.canopas.editor.ui.data.ContentType
-import com.canopas.editor.ui.data.ContentValue
 
 @Immutable
 internal data class ImageContentValue internal constructor(

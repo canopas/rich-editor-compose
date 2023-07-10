@@ -1,4 +1,4 @@
-package com.canopas.editor.ui.data
+package com.canopas.editor.ui.model
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle

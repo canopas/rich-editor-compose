@@ -39,8 +39,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.canopas.editor.ui.RichTextEditor
-import com.canopas.editor.ui.data.RichTextStyle
 import com.canopas.editor.ui.data.TextEditorValue
+import com.canopas.editor.ui.model.RichTextStyle
 import com.canopas.editor.ui.rememberEditorState
 import com.example.texteditor.ui.theme.TextEditorTheme
 

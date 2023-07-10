@@ -1,6 +1,5 @@
-package com.canopas.editor.ui.model
+package com.canopas.editor.ui.data
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -9,10 +8,8 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import com.canopas.editor.ui.data.ContentType
-import com.canopas.editor.ui.data.ContentValue
-import com.canopas.editor.ui.data.RichTextPart
-import com.canopas.editor.ui.data.RichTextStyle
+import com.canopas.editor.ui.model.RichTextPart
+import com.canopas.editor.ui.model.RichTextStyle
 import kotlin.math.max
 import kotlin.math.min
 
@@ -153,7 +150,7 @@ internal data class RichTextValue internal constructor(
             )
 
             if (startRichTextPartIndex < parts.lastIndex) {
-                moveParts(
+                forwardParts(
                     fromIndex = startRichTextPartIndex + 1,
                     toIndex = parts.lastIndex,
                     by = typedChars,
@@ -165,7 +162,7 @@ internal data class RichTextValue internal constructor(
             )
 
             if (endRichTextPartIndex < parts.lastIndex) {
-                moveParts(
+                forwardParts(
                     fromIndex = endRichTextPartIndex + 1,
                     toIndex = parts.lastIndex,
                     by = typedChars,
@@ -190,7 +187,7 @@ internal data class RichTextValue internal constructor(
             )
 
             if ((startRichTextPartIndex + 2) < parts.lastIndex) {
-                moveParts(
+                forwardParts(
                     fromIndex = startRichTextPartIndex + 3,
                     toIndex = parts.lastIndex,
                     by = typedChars,
@@ -214,7 +211,7 @@ internal data class RichTextValue internal constructor(
             )
 
             if ((startRichTextPartIndex + 1) < parts.lastIndex) {
-                moveParts(
+                forwardParts(
                     fromIndex = startRichTextPartIndex + 2,
                     toIndex = parts.lastIndex,
                     by = typedChars,
@@ -225,7 +222,7 @@ internal data class RichTextValue internal constructor(
         return newValue
     }
 
-    private fun moveParts(
+    private fun forwardParts(
         fromIndex: Int,
         toIndex: Int,
         by: Int
@@ -460,26 +457,17 @@ internal data class RichTextValue internal constructor(
         val copyParts = ArrayList(parts)
         val subtext1 = text.substring(0, cursorPosition)
         val subtext2 = text.substring(cursorPosition)
-        Log.d(
-            "AAA",
-            "split BEFORE $parts POSITION $cursorPosition size ${subtext1.length}:${subtext2.length}"
-        )
-
         val textParts1 = removeParts(parts, cursorPosition).toMutableList()
 
         this.textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
         this.parts.clear()
         this.parts.addAll(textParts1)
 
-        val newList = moveParts(copyParts, cursorPosition).toMutableList()
+        val newList = forwardParts(copyParts, cursorPosition).toMutableList()
         val textValue2 =
             RichTextValue(text = subtext2, currentStyles, parts = newList).apply {
                 isFocused = true
             }
-
-        Log.d("AAA", "split at FIRST --- $parts")
-
-        Log.d("AAA", "split SECOND --- $newList")
 
         return Pair(this, textValue2)
     }
@@ -497,7 +485,7 @@ internal data class RichTextValue internal constructor(
             }
     }
 
-    private fun moveParts(
+    private fun forwardParts(
         originalList: List<RichTextPart>,
         cursorPosition: Int
     ): List<RichTextPart> {
@@ -515,7 +503,7 @@ internal data class RichTextValue internal constructor(
         val text = this.text + "\n" + nextItem.text
         val existingParts = ArrayList(this.parts)
         this.parts.addAll(nextItem.parts)
-        moveParts(existingParts.size, this.parts.size, this.text.length + 1)
+        forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
         this.textFieldValue = TextFieldValue(text, selection = TextRange(text.length))
         return this
     }

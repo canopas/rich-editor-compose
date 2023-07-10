@@ -1,6 +1,5 @@
 package com.canopas.editor.ui
 
-import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -35,9 +34,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.canopas.editor.ui.data.ContentType
+import com.canopas.editor.ui.data.ImageContentValue
+import com.canopas.editor.ui.data.RichTextValue
 import com.canopas.editor.ui.data.TextEditorValue
-import com.canopas.editor.ui.model.ImageContentValue
-import com.canopas.editor.ui.model.RichTextValue
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -56,15 +55,11 @@ fun RichTextEditor(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
 ) {
-    //   Log.d("XXX", "state ${state.values[0]}")
-
     val scrollState = rememberScrollState()
 
 
     Column(modifier.verticalScroll(scrollState)) {
         state.values.forEachIndexed { index, value ->
-            Log.d("AAA", "RENDER index $index ")
-
             when (value.type) {
                 ContentType.RICH_TEXT -> {
                     val richText = value as RichTextValue
@@ -147,10 +142,8 @@ internal fun TextFieldComponent(
 
     LaunchedEffect(key1 = richText.isFocused, block = {
         if (richText.isFocused) {
-            //  Log.d("XXX", "requestFocus")
             focusRequester.requestFocus()
         } else {
-            //  Log.d("XXX", "freeFocus")
             focusRequester.freeFocus()
         }
     })

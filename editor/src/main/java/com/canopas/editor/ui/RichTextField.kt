@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import com.canopas.editor.ui.model.RichTextValue
+import com.canopas.editor.ui.data.RichTextValue
 
 @Composable
 internal fun RichTextField(
