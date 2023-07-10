@@ -47,7 +47,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     }
 
     fun hasStyle(style: RichTextStyle): Boolean {
-        return values.filter { it.type == ContentType.RICH_TEXT }
+        return values.filter { it.isFocused && it.type == ContentType.RICH_TEXT }
             .any { (it as RichTextValue).hasStyle(style) }
     }
 
@@ -55,26 +55,25 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         values.filter { it.type == ContentType.RICH_TEXT }.map { it as RichTextValue }
 
     fun toggleStyle(style: RichTextStyle): TextEditorValue {
-        val index = values.indexOfFirst { it.isFocused && it.type == ContentType.RICH_TEXT }
-        if (index != -1) {
-            val richTextValue = values[index] as RichTextValue
-            val value = richTextValue.toggleStyle(style)
-            return update(value, index)
+        values.forEachIndexed { index, value ->
+            if (value.type == ContentType.RICH_TEXT) {
+                val richText = (value as RichTextValue).toggleStyle(style)
+                values[index] = richText
+            }
         }
 
-        return this
+        return TextEditorValue(ArrayList(values))
     }
 
     fun updateStyles(styles: Set<RichTextStyle>): TextEditorValue {
-        val index = values.indexOfFirst { it.isFocused && it.type == ContentType.RICH_TEXT }
-
-        if (index != -1) {
-            val richTextValue = values[index] as RichTextValue
-            val value = richTextValue.updateStyles(styles)
-            return update(value, index)
+        values.forEachIndexed { index, value ->
+            if (value.type == ContentType.RICH_TEXT) {
+                val richText = (value as RichTextValue).updateStyles(styles)
+                values[index] = richText
+            }
         }
 
-        return this
+        return TextEditorValue(ArrayList(values))
     }
 
     private fun clearFocus() {

@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.canopas.editor.ui.RichTextEditor
 import com.canopas.editor.ui.data.TextEditorValue
 import com.canopas.editor.ui.model.RichTextStyle
@@ -167,6 +168,9 @@ fun TitleStyleButton(
             modifier = Modifier.wrapContentSize()
         ) {
 
+            DropDownItem(text = "Normal Text",
+                isSelected = value.hasStyle(RichTextStyle.FontSize(16.sp)),
+                onItemSelected = { onItemSelected(RichTextStyle.FontSize(16.sp)) })
             DropDownItem(text = "Title", isSelected = value.hasStyle(RichTextStyle.TITLE),
                 onItemSelected = { onItemSelected(RichTextStyle.TITLE) })
             DropDownItem(text = "Subtitle", isSelected = value.hasStyle(RichTextStyle.SUB_TITLE),
@@ -241,14 +245,14 @@ fun StyleButton(
     IconButton(
         modifier = Modifier
             .padding(2.dp)
-            .size(48.dp),
-//            .background(
-//                color = if (value.hasStyle(style)) {
-//                    Color.Gray.copy(alpha = 0.2f)
-//                } else {
-//                    Color.Transparent
-//                }, shape = RoundedCornerShape(6.dp)
-//            )
+            .size(48.dp)
+            .background(
+                color = if (value.hasStyle(style)) {
+                    Color.Gray.copy(alpha = 0.2f)
+                } else {
+                    Color.Transparent
+                }, shape = RoundedCornerShape(6.dp)
+            ),
         onClick = {
             onValueChange(value.toggleStyle(style))
         },

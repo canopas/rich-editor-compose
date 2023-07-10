@@ -1,5 +1,6 @@
 package com.canopas.editor.ui.data
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -60,11 +61,14 @@ internal data class RichTextValue internal constructor(
         }
 
     fun toggleStyle(style: RichTextStyle): RichTextValue {
-        return if (currentStyles.contains(style)) {
+        if (currentStyles.contains(style)) {
+            Log.d("XXX", "Remove $style for $text")
             removeStyle(style)
         } else {
+            Log.d("XXX", "Add $style for $text")
             addStyle(style)
         }
+        return this
     }
 
     private fun addStyle(vararg style: RichTextStyle): RichTextValue {
@@ -255,7 +259,7 @@ internal data class RichTextValue internal constructor(
         }
     }
 
-    fun handleRemovingCharacters(
+    private fun handleRemovingCharacters(
         newTextFieldValue: TextFieldValue
     ) {
         val removedChars = textFieldValue.text.length - newTextFieldValue.text.length
@@ -389,7 +393,7 @@ internal data class RichTextValue internal constructor(
     }
 
 
-    fun collapseParts(
+    private fun collapseParts(
         textLastIndex: Int
     ) {
         val startRangeMap = mutableMapOf<Int, Int>()
@@ -465,7 +469,7 @@ internal data class RichTextValue internal constructor(
 
         val newList = forwardParts(copyParts, cursorPosition).toMutableList()
         val textValue2 =
-            RichTextValue(text = subtext2, currentStyles, parts = newList).apply {
+            RichTextValue(text = subtext2, currentStyles.toMutableSet(), parts = newList).apply {
                 isFocused = true
             }
 
