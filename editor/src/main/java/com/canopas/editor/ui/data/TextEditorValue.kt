@@ -110,10 +110,6 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return add(richTextValue)
     }
 
-    private fun removeEmptyRichTexts() {
-        values.removeAll { it.type == ContentType.RICH_TEXT && (it as RichTextValue).text.isEmpty() }
-    }
-
     private fun splitAndAdd(
         focusedRichText: RichTextValue,
         imageContentValue: ImageContentValue
