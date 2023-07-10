@@ -1,7 +1,6 @@
 package com.canopas.editor.ui.data
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.canopas.editor.ui.model.RichTextStyle
 
@@ -17,7 +16,6 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
     fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
-            Log.d("XXX", "update index $index ${value.isFocused}")
             values[index] = value
             return TextEditorValue(ArrayList(values))
         }
@@ -38,8 +36,6 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
 
     private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
-        Log.d("XXX", "add index $index ${value.isFocused}")
-
         if (index != -1) {
             values.add(index, value)
         } else {
@@ -97,13 +93,10 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         val imageContentValue = ImageContentValue(uri = uri)
         val richTextValue = RichTextValue().apply { isFocused = true }
         val currentIndex = values.size - 1
-        val lastAddedImageIndex = values.indexOfLast { it.type == ContentType.IMAGE }
 
-        if (lastAddedImageIndex != -1) {
-            val range = values.slice(lastAddedImageIndex..currentIndex)
-                .filter { it.type == ContentType.RICH_TEXT }
-                .filter { (it as RichTextValue).textFieldValue.text.isEmpty() }
-            values.removeAll(range)
+        val value = values.elementAtOrNull(currentIndex)
+        if (value != null && value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
+            return add(imageContentValue, currentIndex)
         }
 
         val focusedRichText = focusedRichText()
@@ -152,7 +145,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     }
 
     private fun handleRemoveAndMerge(index: Int): TextEditorValue {
-        val previousItem = values.elementAtOrNull(index - 1) ?: return this
+        val previousItem = values.elementAtOrNull(index - 1) ?: return remove(index)
         val nextItem = values.elementAtOrNull(index + 1) ?: return this
         clearFocus()
         remove(index)
