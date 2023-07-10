@@ -34,7 +34,6 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return TextEditorValue(ArrayList(values))
     }
 
-
     private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
         if (index != -1) {
             values.add(index, value)
@@ -92,22 +91,23 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     fun addImage(uri: Uri): TextEditorValue {
         val imageContentValue = ImageContentValue(uri = uri)
         val richTextValue = RichTextValue().apply { isFocused = true }
-        val currentIndex = values.size - 1
-
-        val value = values.elementAtOrNull(currentIndex)
-        if (value != null && value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
-            return add(imageContentValue, currentIndex)
-        }
-
+        removeEmptyRichTexts()
         val focusedRichText = focusedRichText()
-        if (focusedRichText != null && focusedRichText.textFieldValue.text.isNotEmpty()) {
-            return splitAndAdd(focusedRichText, imageContentValue)
+
+        focusedRichText?.let {
+            if (focusedRichText.textFieldValue.text.isNotEmpty()) {
+                return splitAndAdd(focusedRichText, imageContentValue)
+            }
         }
 
         clearFocus()
 
         values.add(imageContentValue)
         return add(richTextValue)
+    }
+
+    private fun removeEmptyRichTexts() {
+        values.removeAll { it.type == ContentType.RICH_TEXT && (it as RichTextValue).text.isEmpty() }
     }
 
     private fun splitAndAdd(

@@ -13,10 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -38,7 +38,6 @@ import com.canopas.editor.ui.data.ContentType
 import com.canopas.editor.ui.data.ImageContentValue
 import com.canopas.editor.ui.data.RichTextValue
 import com.canopas.editor.ui.data.TextEditorValue
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -84,10 +83,6 @@ fun RichTextEditor(
             }
         }
     }
-    val scope = rememberCoroutineScope()
-    SideEffect {
-        scope.launch { scrollState.scrollTo(scrollState.maxValue) }
-    }
 }
 
 @Composable
@@ -116,6 +111,8 @@ internal fun TextFieldComponent(
     onFocusUp: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
+    var previousFocusState by remember { mutableStateOf(false) }
+
     LaunchedEffect(key1 = richText.isFocused, block = {
         if (richText.isFocused) {
             focusRequester.requestFocus()
@@ -123,6 +120,7 @@ internal fun TextFieldComponent(
             focusRequester.freeFocus()
         }
     })
+
     RichTextField(
         value = richText,
         onValueChange = {
@@ -132,7 +130,10 @@ internal fun TextFieldComponent(
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .onFocusChanged {
-                onFocusChange(it.isFocused)
+                if (previousFocusState != it.isFocused) {
+                    onFocusChange(it.isFocused)
+                    previousFocusState = it.isFocused
+                }
             }
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyUp &&
