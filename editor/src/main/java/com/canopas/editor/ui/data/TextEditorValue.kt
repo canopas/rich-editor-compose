@@ -91,13 +91,17 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     fun addImage(uri: Uri): TextEditorValue {
         val imageContentValue = ImageContentValue(uri = uri)
         val richTextValue = RichTextValue().apply { isFocused = true }
-        removeEmptyRichTexts()
         val focusedRichText = focusedRichText()
 
         focusedRichText?.let {
             if (focusedRichText.textFieldValue.text.isNotEmpty()) {
                 return splitAndAdd(focusedRichText, imageContentValue)
             }
+        }
+
+        val value = values.last()
+        if (value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
+            return add(imageContentValue, values.lastIndex)
         }
 
         clearFocus()
