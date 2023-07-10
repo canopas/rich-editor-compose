@@ -1,4 +1,4 @@
-package com.canopas.editor.ui
+package com.canopas.editor.ui.model
 
 data class RichTextPart(
     val fromIndex: Int,
