@@ -1,5 +1,6 @@
 package com.canopas.editor.ui
 
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +31,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -56,10 +58,11 @@ fun RichTextEditor(
     cursorBrush: Brush = SolidColor(Color.Black),
 ) {
     val scrollState = rememberScrollState()
-
+    val focusManager = LocalFocusManager.current
 
     Column(modifier.verticalScroll(scrollState)) {
         state.values.forEachIndexed { index, value ->
+            Log.d("XXX", "index $index focused ${value.isFocused}")
             when (value.type) {
                 ContentType.RICH_TEXT -> {
                     val richText = value as RichTextValue
@@ -76,6 +79,7 @@ fun RichTextEditor(
                 ContentType.IMAGE -> {
                     val imageContentValue = value as ImageContentValue
                     ImageComponent(imageContentValue, onToggleSelection = { isFocused ->
+                        if (isFocused) focusManager.clearFocus(true)
                         onValueChange(state.setFocused(index, isFocused))
                     })
                 }
@@ -114,7 +118,14 @@ internal fun TextFieldComponent(
     onFocusUp: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
-
+    LaunchedEffect(key1 = richText.isFocused, block = {
+        if (richText.isFocused) {
+            Log.d("XXX", "requestFocus")
+            focusRequester.requestFocus()
+        } else {
+            focusRequester.freeFocus()
+        }
+    })
     RichTextField(
         value = richText,
         onValueChange = {
@@ -137,21 +148,14 @@ internal fun TextFieldComponent(
                 }
                 false
             },
-        //cursorBrush = if (richText.isFocused) SolidColor(Color.Black) else SolidColor(Color.Transparent)
+        // cursorBrush = if (richText.isFocused) SolidColor(Color.Black) else SolidColor(Color.Transparent)
     )
 
-    LaunchedEffect(key1 = richText.isFocused, block = {
-        if (richText.isFocused) {
-            focusRequester.requestFocus()
-        } else {
-            focusRequester.freeFocus()
-        }
-    })
 }
 
 @Composable
 fun rememberEditorState(): MutableState<TextEditorValue> {
     return remember {
-        mutableStateOf(TextEditorValue(mutableListOf(RichTextValue())))
+        mutableStateOf(TextEditorValue())
     }
 }

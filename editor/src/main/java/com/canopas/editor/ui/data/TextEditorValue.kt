@@ -1,14 +1,23 @@
 package com.canopas.editor.ui.data
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.canopas.editor.ui.model.RichTextStyle
 
 @Immutable
 class TextEditorValue internal constructor(internal val values: MutableList<ContentValue> = mutableListOf()) {
 
+    init {
+        if (values.isEmpty()) {
+            val richTextValue = RichTextValue().apply { isFocused = true }
+            values.add(richTextValue)
+        }
+    }
+
     fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
+            Log.d("XXX", "update index $index ${value.isFocused}")
             values[index] = value
             return TextEditorValue(ArrayList(values))
         }
@@ -29,6 +38,8 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
 
     private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
+        Log.d("XXX", "add index $index ${value.isFocused}")
+
         if (index != -1) {
             values.add(index, value)
         } else {
@@ -143,11 +154,12 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     private fun handleRemoveAndMerge(index: Int): TextEditorValue {
         val previousItem = values.elementAtOrNull(index - 1) ?: return this
         val nextItem = values.elementAtOrNull(index + 1) ?: return this
-
+        clearFocus()
         remove(index)
         if (previousItem.type == ContentType.RICH_TEXT && nextItem.type == ContentType.RICH_TEXT) {
             if ((nextItem as RichTextValue).text.isNotEmpty()) {
                 val value = (previousItem as RichTextValue).merge(nextItem)
+                value.isFocused = true
                 update(value, index - 1)
             } else {
                 previousItem.isFocused = true

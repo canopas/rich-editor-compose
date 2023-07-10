@@ -73,10 +73,6 @@ fun GreetingPreview() {
                 state = it
             })
 
-//            RichTextField(
-//                value = basicRichTextValue,
-//                onValueChange = { basicRichTextValue = it },)
-
             RichTextEditor(
                 state = state,
                 onValueChange = { state = it },
@@ -263,4 +259,3 @@ fun StyleButton(
         )
     }
 }
-

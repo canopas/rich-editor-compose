@@ -473,6 +473,7 @@ internal data class RichTextValue internal constructor(
                 isFocused = true
             }
 
+        this.isFocused = false
         return Pair(this, textValue2)
     }
 
