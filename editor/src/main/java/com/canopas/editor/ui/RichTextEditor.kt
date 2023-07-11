@@ -5,14 +5,11 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -27,9 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -37,7 +32,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -57,15 +51,6 @@ fun RichTextEditor(
     state: TextEditorValue,
     onValueChange: (TextEditorValue) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    readOnly: Boolean = false,
-    textStyle: TextStyle = TextStyle.Default,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default,
-    singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    cursorBrush: Brush = SolidColor(Color.Black),
 ) {
     val scrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
@@ -146,8 +131,9 @@ internal fun VideoComponent(
                 })
             }
     }
+
     LaunchedEffect(key1 = contentValue.isFocused, block = {
-        exoPlayer.playWhenReady = contentValue.isFocused
+        if (!contentValue.isFocused) exoPlayer.playWhenReady = false
     })
 
     AndroidView(
@@ -161,19 +147,16 @@ internal fun VideoComponent(
                 setShowPreviousButton(false)
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
                 layoutParams = ViewGroup.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
-//                setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
-//                    if (visibility == View.VISIBLE) {
-//                        onToggleSelection(true)
-//                    }
-//                })
+                setOnClickListener {
+                    if (!contentValue.isFocused) onToggleSelection(true)
+                }
             }
         },
         modifier = Modifier
             .wrapContentSize()
             .border(1.dp, if (contentValue.isFocused) Color.Green else Color.Transparent)
-            .background(Color.Black, RoundedCornerShape(2.dp))
+            .background(Color.Black, RoundedCornerShape(2.dp)),
     )
-
 
     DisposableEffect(key1 = contentValue.uri, effect = {
         onDispose {
@@ -224,7 +207,6 @@ internal fun TextFieldComponent(
                 }
                 false
             },
-        // cursorBrush = if (richText.isFocused) SolidColor(Color.Black) else SolidColor(Color.Transparent)
     )
 
 }
