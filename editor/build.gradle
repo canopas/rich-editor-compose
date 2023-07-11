@@ -65,4 +65,6 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation 'androidx.media3:media3-ui:1.1.0'
+    implementation 'androidx.media3:media3-exoplayer:1.1.0'
 }

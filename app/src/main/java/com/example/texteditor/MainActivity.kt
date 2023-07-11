@@ -127,6 +127,12 @@ fun StyleContainer(
             onValueChange = onValueChange
         )
 
+        VideoPicker(
+            value = value,
+            onValueChange = onValueChange
+        )
+
+
     }
 }
 
@@ -226,6 +232,34 @@ fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_image), contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+
+@Composable
+fun VideoPicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit) {
+
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let { onValueChange(value.addVideo(it)) }
+        }
+    )
+
+    IconButton(
+        modifier = Modifier
+            .padding(2.dp)
+            .size(48.dp),
+        onClick = {
+            pickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+            )
+        },
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_video), contentDescription = null,
             modifier = Modifier.size(24.dp)
         )
     }
