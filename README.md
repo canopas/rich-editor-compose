@@ -1,7 +1,23 @@
-# RichEditorCompose
+# RichEditor
 
 Android WYSIWYG Rich editor for Jetpack compose.
 
+<img src="https://github.com/canopas/RichEditorCompose/blob/main/gif/sample.gif" height="540" />
+
+
+## Features
+The editor offers the following <b>options</b>:
+
+- [x] **Bold**
+- [x] *Italic*
+- [x] <u>Underline</u>
+- [x] Different Headings
+- [x] Text size
+- [x] Customize text span formatting
+- [x] Add Images
+- [x] Add Videos
+
+  
 ## How to add in your project
 
 [![Maven Central]()]()
@@ -12,11 +28,28 @@ Add the dependency below to your module's build.gradle file:
 ```
 
 ## How to use it?
+```
+@Composable
+fun Sample() {
+
+        var state by rememberEditorState()
+        RichEditor(
+            state = state,
+            onValueChange = { state = it },
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .border(1.dp, Color.Gray)
+                    .padding(5.dp)
+        )   
+    
+}
+```
+
 
 
 # Demo
 [Sample](https://github.com/canopas/RichEditorCompose/tree/main/app) app demonstrates how simple the usage of the library actually is.
-
 
 # Bugs and Feedback
 For bugs, questions and discussions please use the [Github Issues](https://github.com/canopas/RichEditorCompose/issues).
