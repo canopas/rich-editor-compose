@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
-                    GreetingPreview()
+                    Sample()
                 }
             }
         }
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun Sample() {
     TextEditorTheme {
         var state by rememberEditorState()
 
