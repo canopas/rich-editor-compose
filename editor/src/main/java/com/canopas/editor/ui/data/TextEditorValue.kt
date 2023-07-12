@@ -1,7 +1,6 @@
 package com.canopas.editor.ui.data
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.canopas.editor.ui.model.RichTextStyle
 
@@ -13,10 +12,21 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             val richTextValue = RichTextValue().apply { isFocused = true }
             values.add(richTextValue)
         }
-        Log.d("XXX", "values ${values.size}")
     }
 
-    fun update(value: ContentValue, index: Int): TextEditorValue {
+    fun getContent() = values
+
+    fun setContent(content: List<ContentValue>) {
+        values.clear()
+        if (content.isNotEmpty()) {
+            values.addAll(content)
+        } else {
+            val richTextValue = RichTextValue().apply { isFocused = true }
+            values.add(richTextValue)
+        }
+    }
+
+    internal fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
             values[index] = value
             return TextEditorValue(values)
@@ -46,7 +56,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return TextEditorValue(values)
     }
 
-    fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
+    internal fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
         if (index == -1 || index >= values.size) return this
         if (isFocused) clearFocus()
         values[index].isFocused = isFocused
@@ -136,7 +146,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return this
     }
 
-    fun focusUp(index: Int): TextEditorValue {
+    internal fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
         if (index != -1 && index < values.size) {
             values[index].isFocused = false

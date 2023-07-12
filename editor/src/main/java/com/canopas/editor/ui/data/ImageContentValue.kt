@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Immutable
 
 @Immutable
-internal data class ImageContentValue internal constructor(
+data class ImageContentValue constructor(
     internal val uri: Uri,
 ) : ContentValue() {
 

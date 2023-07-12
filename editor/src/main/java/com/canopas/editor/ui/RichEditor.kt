@@ -47,7 +47,7 @@ import com.canopas.editor.ui.data.TextEditorValue
 import com.canopas.editor.ui.data.VideoContentValue
 
 @Composable
-fun RichTextEditor(
+fun RichEditor(
     state: TextEditorValue,
     onValueChange: (TextEditorValue) -> Unit,
     modifier: Modifier = Modifier,

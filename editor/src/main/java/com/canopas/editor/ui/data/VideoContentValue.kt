@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Immutable
 
 @Immutable
-internal data class VideoContentValue internal constructor(
+data class VideoContentValue constructor(
     internal val uri: Uri,
 ) : ContentValue() {
 
