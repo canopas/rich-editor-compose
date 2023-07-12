@@ -2,8 +2,7 @@
 
 Android WYSIWYG Rich editor for Jetpack compose.
 
-<img src="https://github.com/canopas/RichEditorCompose/blob/main/gif/sample.gif" height="540" />
-
+<img src="./gif/sample.gif" height="540" />
 
 ## Features
 The editor offers the following <b>options</b>:
@@ -16,16 +15,6 @@ The editor offers the following <b>options</b>:
 - [x] Customize text span formatting
 - [x] Add Images
 - [x] Add Videos
-
-  
-## How to add in your project
-
-[![Maven Central]()]()
-
-Add the dependency below to your module's build.gradle file:
-```gradle
- implementation ''
-```
 
 ## How to use it?
 ```
@@ -45,8 +34,6 @@ fun Sample() {
     
 }
 ```
-
-
 
 # Demo
 [Sample](https://github.com/canopas/RichEditorCompose/tree/main/app) app demonstrates how simple the usage of the library actually is.
