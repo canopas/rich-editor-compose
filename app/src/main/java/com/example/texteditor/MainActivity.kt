@@ -39,7 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.canopas.editor.ui.RichTextEditor
+import com.canopas.editor.ui.RichEditor
 import com.canopas.editor.ui.data.TextEditorValue
 import com.canopas.editor.ui.model.RichTextStyle
 import com.canopas.editor.ui.rememberEditorState
@@ -73,7 +73,7 @@ fun GreetingPreview() {
                 state = it
             })
 
-            RichTextEditor(
+            RichEditor(
                 state = state,
                 onValueChange = { state = it },
                 modifier = Modifier
@@ -126,6 +126,12 @@ fun StyleContainer(
             value = value,
             onValueChange = onValueChange
         )
+
+        VideoPicker(
+            value = value,
+            onValueChange = onValueChange
+        )
+
 
     }
 }
@@ -226,6 +232,34 @@ fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_image), contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+
+@Composable
+fun VideoPicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit) {
+
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let { onValueChange(value.addVideo(it)) }
+        }
+    )
+
+    IconButton(
+        modifier = Modifier
+            .padding(2.dp)
+            .size(48.dp),
+        onClick = {
+            pickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+            )
+        },
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_video), contentDescription = null,
             modifier = Modifier.size(24.dp)
         )
     }

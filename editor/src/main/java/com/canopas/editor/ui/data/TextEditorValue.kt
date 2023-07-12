@@ -14,10 +14,22 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         }
     }
 
-    fun update(value: ContentValue, index: Int): TextEditorValue {
+    fun getContent() = values
+
+    fun setContent(content: List<ContentValue>) {
+        values.clear()
+        if (content.isNotEmpty()) {
+            values.addAll(content)
+        } else {
+            val richTextValue = RichTextValue().apply { isFocused = true }
+            values.add(richTextValue)
+        }
+    }
+
+    internal fun update(value: ContentValue, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
             values[index] = value
-            return TextEditorValue(ArrayList(values))
+            return TextEditorValue(values)
         }
         return this
     }
@@ -26,14 +38,13 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         if (index != -1) {
             values.removeAt(index)
         }
-        return TextEditorValue(ArrayList(values))
+        return TextEditorValue(values)
     }
 
     private fun remove(value: ContentValue): TextEditorValue {
         values.remove(value)
-        return TextEditorValue(ArrayList(values))
+        return TextEditorValue(values)
     }
-
 
     private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
         if (index != -1) {
@@ -42,15 +53,14 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             values.add(value)
         }
 
-        return TextEditorValue(ArrayList(values))
+        return TextEditorValue(values)
     }
 
-    fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
+    internal fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
         if (index == -1 || index >= values.size) return this
         if (isFocused) clearFocus()
-        val value = values[index]
-        value.isFocused = isFocused
-        return update(value, index)
+        values[index].isFocused = isFocused
+        return TextEditorValue(values)
     }
 
     fun hasStyle(style: RichTextStyle): Boolean {
@@ -69,7 +79,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             }
         }
 
-        return TextEditorValue(ArrayList(values))
+        return TextEditorValue(values)
     }
 
     fun updateStyles(styles: Set<RichTextStyle>): TextEditorValue {
@@ -80,7 +90,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             }
         }
 
-        return TextEditorValue(ArrayList(values))
+        return TextEditorValue(values)
     }
 
     private fun clearFocus() {
@@ -89,30 +99,39 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
     private fun focusedRichText() = getRichTexts().firstOrNull { it.isFocused }
 
-    fun addImage(uri: Uri): TextEditorValue {
-        val imageContentValue = ImageContentValue(uri = uri)
-        val richTextValue = RichTextValue().apply { isFocused = true }
-        val currentIndex = values.size - 1
+    private fun addContent(contentValue: ContentValue): TextEditorValue {
+        val focusedRichText = focusedRichText()
 
-        val value = values.elementAtOrNull(currentIndex)
-        if (value != null && value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
-            return add(imageContentValue, currentIndex)
+        focusedRichText?.let {
+            if (focusedRichText.textFieldValue.text.isNotEmpty()) {
+                return splitAndAdd(focusedRichText, contentValue)
+            }
         }
 
-        val focusedRichText = focusedRichText()
-        if (focusedRichText != null && focusedRichText.textFieldValue.text.isNotEmpty()) {
-            return splitAndAdd(focusedRichText, imageContentValue)
+        val value = values.last()
+        if (value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
+            return add(contentValue, values.lastIndex)
         }
 
         clearFocus()
 
-        values.add(imageContentValue)
-        return add(richTextValue)
+        values.add(contentValue)
+        return add(RichTextValue().apply { isFocused = true })
+    }
+
+    fun addImage(uri: Uri): TextEditorValue {
+        val imageContentValue = ImageContentValue(uri = uri)
+        return addContent(imageContentValue)
+    }
+
+    fun addVideo(uri: Uri): TextEditorValue {
+        val videoContent = VideoContentValue(uri = uri)
+        return addContent(videoContent)
     }
 
     private fun splitAndAdd(
         focusedRichText: RichTextValue,
-        imageContentValue: ImageContentValue
+        contentValue: ContentValue
     ): TextEditorValue {
         val cursorPosition = focusedRichText.textFieldValue.selection.end
         val index = values.indexOf(focusedRichText)
@@ -120,21 +139,21 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
             clearFocus()
             val (value1, value2) = focusedRichText.split(cursorPosition)
             values[index] = value1
-            values.add(index + 1, imageContentValue)
+            values.add(index + 1, contentValue)
             return add(value2, index + 2)
         }
 
         return this
     }
 
-    fun focusUp(index: Int): TextEditorValue {
+    internal fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
         if (index != -1 && index < values.size) {
             values[index].isFocused = false
         }
         if (upIndex != -1 && upIndex < values.size) {
             val item = values[upIndex]
-            if (item.type == ContentType.IMAGE && item.isFocused) {
+            if ((item.type == ContentType.IMAGE || item.type == ContentType.VIDEO) && item.isFocused) {
                 return handleRemoveAndMerge(upIndex)
             } else {
                 item.isFocused = true
@@ -166,7 +185,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 }
 
 enum class ContentType {
-    IMAGE, RICH_TEXT
+    IMAGE, RICH_TEXT, VIDEO
 }
 
 abstract class ContentValue {

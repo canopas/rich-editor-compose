@@ -4,10 +4,10 @@ import android.net.Uri
 import androidx.compose.runtime.Immutable
 
 @Immutable
-data class ImageContentValue constructor(
+data class VideoContentValue constructor(
     internal val uri: Uri,
 ) : ContentValue() {
 
-    override val type: ContentType = ContentType.IMAGE
+    override val type: ContentType = ContentType.VIDEO
     override var isFocused: Boolean = false
 }

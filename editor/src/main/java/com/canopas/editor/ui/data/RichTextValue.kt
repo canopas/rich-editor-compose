@@ -15,7 +15,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 @Immutable
-internal data class RichTextValue internal constructor(
+data class RichTextValue constructor(
     internal var textFieldValue: TextFieldValue,
     internal val currentStyles: MutableSet<RichTextStyle> = mutableSetOf(),
     internal val parts: MutableList<RichTextPart> = mutableListOf()
@@ -122,7 +122,6 @@ internal data class RichTextValue internal constructor(
 
         textFieldValue = newTextFieldValue
         return this
-
     }
 
     private fun handleAddingCharacters(
