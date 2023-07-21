@@ -1,6 +1,5 @@
 package com.canopas.editor.ui.data
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -62,10 +61,8 @@ data class RichTextValue constructor(
 
     fun toggleStyle(style: RichTextStyle): RichTextValue {
         if (currentStyles.contains(style)) {
-            Log.d("XXX", "Remove $style for $text")
             removeStyle(style)
         } else {
-            Log.d("XXX", "Add $style for $text")
             addStyle(style)
         }
         return this

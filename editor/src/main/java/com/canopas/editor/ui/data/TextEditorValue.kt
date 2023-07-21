@@ -146,6 +146,13 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return this
     }
 
+    fun removeContent(index: Int): TextEditorValue {
+        if (index != -1 && index < values.size) {
+            return handleRemoveAndMerge(index)
+        }
+        return this
+    }
+
     internal fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
         if (index != -1 && index < values.size) {
