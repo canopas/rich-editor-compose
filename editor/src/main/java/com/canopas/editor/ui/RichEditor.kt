@@ -2,9 +2,6 @@ package com.canopas.editor.ui
 
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -250,15 +247,11 @@ internal fun TextFieldComponent(
 
 @Composable
 private fun BoxScope.ContentDeleteButton(focused: Boolean, onRemoveClicked: () -> Unit) {
-    AnimatedVisibility(
-        visible = focused,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier.align(Alignment.TopEnd)
-    ) {
+    if (focused) {
         Box(
             modifier = Modifier
                 .padding(top = 4.dp, end = 4.dp)
+                .align(Alignment.TopEnd)
                 .size(34.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primary.copy(0.9f), shape = CircleShape
