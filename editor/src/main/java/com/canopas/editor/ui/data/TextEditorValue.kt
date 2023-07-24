@@ -184,10 +184,10 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
                 previousItem.isFocused = true
                 update(previousItem, index - 1)
             }
-            return remove(nextItem)
+             remove(nextItem)
         }
 
-        return this
+        return TextEditorValue(values)
     }
 }
 
