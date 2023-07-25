@@ -2,7 +2,7 @@ package com.canopas.editor.ui.data
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
-import com.canopas.editor.ui.model.RichTextStyle
+import com.canopas.editor.ui.model.RichTextAttribute
 
 @Immutable
 class TextEditorValue internal constructor(internal val values: MutableList<ContentValue> = mutableListOf()) {
@@ -63,7 +63,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return TextEditorValue(values)
     }
 
-    fun hasStyle(style: RichTextStyle): Boolean {
+    fun hasStyle(style: RichTextAttribute): Boolean {
         return values.filter { it.isFocused && it.type == ContentType.RICH_TEXT }
             .any { (it as RichTextValue).hasStyle(style) }
     }
@@ -71,7 +71,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     private fun getRichTexts(): List<RichTextValue> =
         values.filter { it.type == ContentType.RICH_TEXT }.map { it as RichTextValue }
 
-    fun toggleStyle(style: RichTextStyle): TextEditorValue {
+    fun toggleStyle(style: RichTextAttribute): TextEditorValue {
         values.forEachIndexed { index, value ->
             if (value.type == ContentType.RICH_TEXT) {
                 val richText = (value as RichTextValue).toggleStyle(style)
@@ -82,7 +82,7 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return TextEditorValue(values)
     }
 
-    fun updateStyles(styles: Set<RichTextStyle>): TextEditorValue {
+    fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
         values.forEachIndexed { index, value ->
             if (value.type == ContentType.RICH_TEXT) {
                 val richText = (value as RichTextValue).updateStyles(styles)

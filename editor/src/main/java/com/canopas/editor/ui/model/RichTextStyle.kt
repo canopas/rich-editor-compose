@@ -8,128 +8,65 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
-interface RichTextStyle {
-    fun applyStyle(spanStyle: SpanStyle): SpanStyle
-    fun isTitleStyles(): Boolean
+enum class AttributeScope {
+    INLINE,
+    HEADER, EMBED
+}
 
-    object Bold : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(fontWeight = FontWeight.Bold)
+object RichText {
+    val Bold = RichTextAttribute.BoldAttribute
+    val Italic = RichTextAttribute.ItalicAttribute
+    val Underline = RichTextAttribute.UnderlineAttribute
+    val H1 = RichTextAttribute.H1
+    val H2 = RichTextAttribute.H2
+    val H3 = RichTextAttribute.H3
+    val H4 = RichTextAttribute.H4
+    val H5 = RichTextAttribute.H5
+    val H6 = RichTextAttribute.H6
+    val NormalText = RichTextAttribute.NormalText
+    val Title = RichTextAttribute.TITLE
+    val SubTitle = RichTextAttribute.SUB_TITLE
+}
 
+sealed interface RichTextAttribute {
+    val key: String?
+    val scope: AttributeScope?
+    fun apply(style: SpanStyle): SpanStyle
+
+    object BoldAttribute : RichTextAttribute {
+        override val key: String
+            get() = "bold"
+        override val scope: AttributeScope
+            get() = AttributeScope.INLINE
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(fontWeight = FontWeight.Bold)
         }
-
-        override fun isTitleStyles() = false
     }
 
-    object TITLE : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 38.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.15.sp
-            )
+    object ItalicAttribute : RichTextAttribute {
+        override val key: String
+            get() = "italic"
+        override val scope: AttributeScope
+            get() = AttributeScope.INLINE
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(fontStyle = FontStyle.Italic)
         }
-
-        override fun isTitleStyles() = true
-    }
-
-    object SUB_TITLE : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0XFF666666),
-                letterSpacing = 0.15.sp
-            )
-        }
-
-        override fun isTitleStyles() = true
-
-    }
-
-    object H1 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        override fun isTitleStyles() = true
 
     }
 
-    object H2 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
+    object UnderlineAttribute : RichTextAttribute {
+        override val key: String
+            get() = "underline"
+        override val scope: AttributeScope
+            get() = AttributeScope.INLINE
 
-        override fun isTitleStyles() = true
-    }
-
-    object H3 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        override fun isTitleStyles() = true
-    }
-
-    object H4 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        override fun isTitleStyles() = true
-    }
-
-    object H5 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        override fun isTitleStyles() = true
-    }
-
-
-    object H6 : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        override fun isTitleStyles() = true
-    }
-
-
-    object Italic : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(fontStyle = FontStyle.Italic)
-        }
-
-        override fun isTitleStyles() = false
-    }
-
-    object Underline : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
                 textDecoration = if (
-                    spanStyle.textDecoration == TextDecoration.LineThrough ||
-                    spanStyle.textDecoration == TextDecoration.combine(
+                    style.textDecoration == TextDecoration.LineThrough ||
+                    style.textDecoration == TextDecoration.combine(
                         listOf(TextDecoration.Underline, TextDecoration.LineThrough)
                     )
                 ) {
@@ -141,19 +78,165 @@ interface RichTextStyle {
                 }
             )
         }
-
-        override fun isTitleStyles() = false
     }
 
-    data class FontSize(val fontSize: TextUnit) : RichTextStyle {
-        override fun applyStyle(spanStyle: SpanStyle): SpanStyle {
-            return spanStyle.copy(
+    object NormalText : RichTextAttribute {
+        override fun apply(style: SpanStyle): SpanStyle {
+            return SpanStyle()
+        }
+
+        override val key: String
+            get() = "text"
+        override val scope: AttributeScope
+            get() = AttributeScope.INLINE
+    }
+
+    object TITLE : RichTextAttribute {
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 38.sp,
+                fontWeight = FontWeight.W800,
+                letterSpacing = 0.15.sp
+            )
+        }
+
+        override val key: String
+            get() = "title"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+    }
+
+    object SUB_TITLE : RichTextAttribute {
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 15.sp,
+                fontWeight = FontWeight.W500,
+                color = Color(0XFF666666),
+                letterSpacing = 0.15.sp
+            )
+        }
+
+        override val key: String
+            get() = "sub_title"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+    }
+
+
+    object H1 : RichTextAttribute {
+        override val key: String
+            get() = "header1"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+
+    object H2 : RichTextAttribute {
+        override val key: String
+            get() = "header2"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+    object H3 : RichTextAttribute {
+        override val key: String
+            get() = "header3"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+    object H4 : RichTextAttribute {
+        override val key: String
+            get() = "header4"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+
+    object H5 : RichTextAttribute {
+        override val key: String
+            get() = "header5"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+    object H6 : RichTextAttribute {
+        override val key: String
+            get() = "header6"
+        override val scope: AttributeScope
+            get() = AttributeScope.HEADER
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
+    data class FontSize(val fontSize: TextUnit) : RichTextAttribute {
+        override val key: String
+            get() = "font_size"
+        override val scope: AttributeScope
+            get() = AttributeScope.INLINE
+
+        override fun apply(style: SpanStyle): SpanStyle {
+            return style.copy(
                 fontSize = fontSize,
                 fontStyle = FontStyle.Normal,
                 fontWeight = FontWeight.Normal
             )
         }
-
-        override fun isTitleStyles() = false
     }
+
+
+//    data class ImageAttribute(override val value: String) : RichTextAttribute<String> {
+//        override val key: String
+//            get() = "image"
+//        override val scope: RichTextAttributeScope
+//            get() = RichTextAttributeScope.EMBEDS
+//    }
+
+//    data class VideoAttribute(override val value: String) : Attribute<String> {
+//        override val key: String
+//            get() = "video"
+//        override val scope: AttributeScope
+//            get() = AttributeScope.EMBEDS
+//    }
 }

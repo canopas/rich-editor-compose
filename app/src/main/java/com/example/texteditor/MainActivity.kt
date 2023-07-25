@@ -38,10 +38,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.canopas.editor.ui.RichEditor
 import com.canopas.editor.ui.data.TextEditorValue
-import com.canopas.editor.ui.model.RichTextStyle
+import com.canopas.editor.ui.model.RichText
+import com.canopas.editor.ui.model.RichTextAttribute
 import com.canopas.editor.ui.rememberEditorState
 import com.example.texteditor.ui.theme.TextEditorTheme
 
@@ -103,21 +103,21 @@ fun StyleContainer(
         TitleStyleButton(value, onValueChange)
         StyleButton(
             icon = R.drawable.ic_bold,
-            style = RichTextStyle.Bold,
+            style = RichText.Bold,
             value = value,
             onValueChange = onValueChange
         )
 
         StyleButton(
             icon = R.drawable.ic_italic,
-            style = RichTextStyle.Italic,
+            style = RichText.Italic,
             value = value,
             onValueChange = onValueChange
         )
 
         StyleButton(
             icon = R.drawable.ic_underlined,
-            style = RichTextStyle.Underline,
+            style = RichText.Underline,
             value = value,
             onValueChange = onValueChange
         )
@@ -143,7 +143,7 @@ fun TitleStyleButton(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val onItemSelected = { style: RichTextStyle ->
+    val onItemSelected = { style: RichTextAttribute ->
         onValueChange(value.updateStyles(setOf(style)))
         expanded = false
     }
@@ -170,21 +170,21 @@ fun TitleStyleButton(
             modifier = Modifier.wrapContentSize()
         ) {
 
-            DropDownItem(text = "Normal Text",
-                isSelected = value.hasStyle(RichTextStyle.FontSize(16.sp)),
-                onItemSelected = { onItemSelected(RichTextStyle.FontSize(16.sp)) })
-            DropDownItem(text = "Title", isSelected = value.hasStyle(RichTextStyle.TITLE),
-                onItemSelected = { onItemSelected(RichTextStyle.TITLE) })
-            DropDownItem(text = "Subtitle", isSelected = value.hasStyle(RichTextStyle.SUB_TITLE),
-                onItemSelected = { onItemSelected(RichTextStyle.SUB_TITLE) })
-            DropDownItem(text = "Header 1", isSelected = value.hasStyle(RichTextStyle.H1),
-                onItemSelected = { onItemSelected(RichTextStyle.H1) })
-            DropDownItem(text = "Header 2", isSelected = value.hasStyle(RichTextStyle.H2),
-                onItemSelected = { onItemSelected(RichTextStyle.H2) })
-            DropDownItem(text = "Header 3", isSelected = value.hasStyle(RichTextStyle.H3),
-                onItemSelected = { onItemSelected(RichTextStyle.H3) })
-            DropDownItem(text = "Header 4", isSelected = value.hasStyle(RichTextStyle.H4),
-                onItemSelected = { onItemSelected(RichTextStyle.H4) })
+            DropDownItem(text = "Text",
+                isSelected = value.hasStyle(RichText.NormalText),
+                onItemSelected = { onItemSelected(RichTextAttribute.NormalText) })
+            DropDownItem(text = "Title", isSelected = value.hasStyle(RichText.Title),
+                onItemSelected = { onItemSelected(RichText.Title) })
+            DropDownItem(text = "Subtitle", isSelected = value.hasStyle(RichText.SubTitle),
+                onItemSelected = { onItemSelected(RichText.SubTitle) })
+            DropDownItem(text = "Header 1", isSelected = value.hasStyle(RichText.H1),
+                onItemSelected = { onItemSelected(RichText.H1) })
+            DropDownItem(text = "Header 2", isSelected = value.hasStyle(RichText.H2),
+                onItemSelected = { onItemSelected(RichText.H2) })
+            DropDownItem(text = "Header 3", isSelected = value.hasStyle(RichText.H3),
+                onItemSelected = { onItemSelected(RichText.H3) })
+            DropDownItem(text = "Header 4", isSelected = value.hasStyle(RichText.H4),
+                onItemSelected = { onItemSelected(RichText.H4) })
         }
     }
 }
@@ -268,7 +268,7 @@ fun VideoPicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
 @Composable
 fun StyleButton(
     @DrawableRes icon: Int,
-    style: RichTextStyle,
+    style: RichTextAttribute,
     value: TextEditorValue,
     onValueChange: (TextEditorValue) -> Unit,
 ) {

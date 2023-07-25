@@ -8,21 +8,22 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import com.canopas.editor.ui.model.AttributeScope
+import com.canopas.editor.ui.model.RichTextAttribute
 import com.canopas.editor.ui.model.RichTextPart
-import com.canopas.editor.ui.model.RichTextStyle
 import kotlin.math.max
 import kotlin.math.min
 
 @Immutable
 data class RichTextValue constructor(
     internal var textFieldValue: TextFieldValue,
-    internal val currentStyles: MutableSet<RichTextStyle> = mutableSetOf(),
+    internal val currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
     internal val parts: MutableList<RichTextPart> = mutableListOf()
 ) : ContentValue() {
 
     constructor(
         text: String = "",
-        currentStyles: MutableSet<RichTextStyle> = mutableSetOf(),
+        currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
         parts: MutableList<RichTextPart> = mutableListOf()
     ) : this(
         textFieldValue = TextFieldValue(text = text, selection = TextRange(text.length)),
@@ -48,7 +49,7 @@ data class RichTextValue constructor(
             append(textFieldValue.text)
             parts.forEach { part ->
                 val spanStyle = part.styles.fold(SpanStyle()) { spanStyle, richTextStyle ->
-                    richTextStyle.applyStyle(spanStyle)
+                    richTextStyle.apply(spanStyle)
                 }
 
                 addStyle(
@@ -59,7 +60,7 @@ data class RichTextValue constructor(
             }
         }
 
-    fun toggleStyle(style: RichTextStyle): RichTextValue {
+    fun toggleStyle(style: RichTextAttribute): RichTextValue {
         if (currentStyles.contains(style)) {
             removeStyle(style)
         } else {
@@ -68,20 +69,21 @@ data class RichTextValue constructor(
         return this
     }
 
-    private fun addStyle(vararg style: RichTextStyle): RichTextValue {
+    private fun addStyle(vararg style: RichTextAttribute): RichTextValue {
         currentStyles.addAll(style)
         applyStylesToSelectedText(*style)
         return this
     }
 
-    fun updateStyles(newStyles: Set<RichTextStyle>): RichTextValue {
+    fun updateStyles(newStyles: Set<RichTextAttribute>): RichTextValue {
         currentStyles.clear()
         currentStyles.addAll(newStyles)
+
         applyStylesToSelectedText(*newStyles.toTypedArray())
         return this
     }
 
-    private fun applyStylesToSelectedText(vararg style: RichTextStyle) {
+    private fun applyStylesToSelectedText(vararg style: RichTextAttribute) {
         updateSelectedTextParts { part ->
             val styles = part.styles.toMutableSet()
             styles.addAll(style.toSet())
@@ -90,13 +92,13 @@ data class RichTextValue constructor(
         }
     }
 
-    private fun removeStyle(vararg style: RichTextStyle): RichTextValue {
+    private fun removeStyle(vararg style: RichTextAttribute): RichTextValue {
         currentStyles.removeAll(style.toSet())
         removeStylesFromSelectedText(*style)
         return this
     }
 
-    private fun removeStylesFromSelectedText(vararg style: RichTextStyle) {
+    private fun removeStylesFromSelectedText(vararg style: RichTextAttribute) {
         updateSelectedTextParts { part ->
             val styles = part.styles.toMutableSet()
             styles.removeAll(style.toSet())
@@ -238,8 +240,8 @@ data class RichTextValue constructor(
     }
 
     private fun removeTitleStylesIfAny() {
-        val hasTitleStyle = currentStyles.any { it.isTitleStyles() }
-        if (hasTitleStyle) clearStyles()
+        val isHeader = currentStyles.any { it.scope == AttributeScope.HEADER }
+        if (isHeader) clearStyles()
     }
 
     private fun clearStyles() {
@@ -316,7 +318,7 @@ data class RichTextValue constructor(
         setCurrentStyles(newStyles.toSet())
     }
 
-    private fun setCurrentStyles(currentStyles: Set<RichTextStyle>) {
+    private fun setCurrentStyles(currentStyles: Set<RichTextAttribute>) {
         this.currentStyles.clear()
         this.currentStyles.addAll(currentStyles)
     }
@@ -509,6 +511,6 @@ data class RichTextValue constructor(
         return this
     }
 
-    fun hasStyle(style: RichTextStyle) = currentStyles.contains(style)
+    fun hasStyle(style: RichTextAttribute) = currentStyles.any { it.key == style.key }
 
 }
