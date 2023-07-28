@@ -1,32 +1,34 @@
 package com.canopas.editor.ui.data
 
-import android.net.Uri
 import androidx.compose.runtime.Immutable
-import com.canopas.editor.ui.model.RichTextAttribute
+import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
+import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
+import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
 
 @Immutable
-class TextEditorValue internal constructor(internal val values: MutableList<ContentValue> = mutableListOf()) {
+class TextEditorValue internal constructor(internal val values: MutableList<EditorAttribute> = mutableListOf()) {
+
+    var focusedAttributeIndex = -1
 
     init {
         if (values.isEmpty()) {
-            val richTextValue = RichTextValue().apply { isFocused = true }
-            values.add(richTextValue)
+            focusedAttributeIndex = 0
+            values.add(TextAttribute())
         }
     }
 
     fun getContent() = values
 
-    fun setContent(content: List<ContentValue>) {
+    fun setContent(content: List<EditorAttribute>) {
         values.clear()
         if (content.isNotEmpty()) {
             values.addAll(content)
         } else {
-            val richTextValue = RichTextValue().apply { isFocused = true }
-            values.add(richTextValue)
+            values.add(TextAttribute())
         }
     }
 
-    internal fun update(value: ContentValue, index: Int): TextEditorValue {
+    internal fun update(value: EditorAttribute, index: Int): TextEditorValue {
         if (index != -1 && index < values.size) {
             values[index] = value
             return TextEditorValue(values)
@@ -41,12 +43,12 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         return TextEditorValue(values)
     }
 
-    private fun remove(value: ContentValue): TextEditorValue {
+    private fun remove(value: EditorAttribute): TextEditorValue {
         values.remove(value)
         return TextEditorValue(values)
     }
 
-    private fun add(value: ContentValue, index: Int = -1): TextEditorValue {
+    private fun add(value: EditorAttribute, index: Int = -1): TextEditorValue {
         if (index != -1) {
             values.add(index, value)
         } else {
@@ -58,24 +60,27 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
     internal fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
         if (index == -1 || index >= values.size) return this
-        if (isFocused) clearFocus()
-        values[index].isFocused = isFocused
+        if (isFocused && focusedAttributeIndex == index) return this
+
+        if (isFocused) focusedAttributeIndex = index
+        else if (focusedAttributeIndex == index) focusedAttributeIndex = -1
         return TextEditorValue(values)
     }
 
     fun hasStyle(style: RichTextAttribute): Boolean {
-        return values.filter { it.isFocused && it.type == ContentType.RICH_TEXT }
-            .any { (it as RichTextValue).hasStyle(style) }
+        return values.filterIndexed { index, value ->
+            focusedAttributeIndex == index && value.scope == AttributeScope.TEXTS
+        }.any { (it as TextAttribute).value.hasStyle(style) }
     }
 
-    private fun getRichTexts(): List<RichTextValue> =
-        values.filter { it.type == ContentType.RICH_TEXT }.map { it as RichTextValue }
+    private fun getRichTexts(): List<TextAttribute> =
+        values.filter { it.scope == AttributeScope.TEXTS }.map { it as TextAttribute }
 
     fun toggleStyle(style: RichTextAttribute): TextEditorValue {
         values.forEachIndexed { index, value ->
-            if (value.type == ContentType.RICH_TEXT) {
-                val richText = (value as RichTextValue).toggleStyle(style)
-                values[index] = richText
+            if (value.scope == AttributeScope.TEXTS) {
+                val richText = ((value as TextAttribute).value).toggleStyle(style)
+                values[index] = TextAttribute(richText)
             }
         }
 
@@ -84,9 +89,9 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
 
     fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
         values.forEachIndexed { index, value ->
-            if (value.type == ContentType.RICH_TEXT) {
-                val richText = (value as RichTextValue).updateStyles(styles)
-                values[index] = richText
+            if (value.scope == AttributeScope.TEXTS) {
+                val richText = ((value as TextAttribute).value).updateStyles(styles)
+                values[index] = TextAttribute(richText)
             }
         }
 
@@ -94,53 +99,51 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     }
 
     private fun clearFocus() {
-        values.forEach { it.isFocused = false }
+        focusedAttributeIndex = -1
     }
 
-    private fun focusedRichText() = getRichTexts().firstOrNull { it.isFocused }
+    private fun focusedAttribute() = values.elementAtOrNull(focusedAttributeIndex)
 
-    private fun addContent(contentValue: ContentValue): TextEditorValue {
-        val focusedRichText = focusedRichText()
+    private fun addContent(attribute: EditorAttribute): TextEditorValue {
+        val focusedAttribute = focusedAttribute()
 
-        focusedRichText?.let {
-            if (focusedRichText.textFieldValue.text.isNotEmpty()) {
-                return splitAndAdd(focusedRichText, contentValue)
+        (focusedAttribute as? TextAttribute)?.let {
+            if (!it.isEmpty) {
+                return splitAndAdd(it, attribute)
             }
         }
 
         val value = values.last()
-        if (value.type == ContentType.RICH_TEXT && (value as RichTextValue).text.isEmpty()) {
-            return add(contentValue, values.lastIndex)
+        if (value.scope == AttributeScope.TEXTS && (value as TextAttribute).isEmpty) {
+            return add(attribute, values.lastIndex)
         }
 
         clearFocus()
 
-        values.add(contentValue)
-        return add(RichTextValue().apply { isFocused = true })
+        values.add(attribute)
+        return add(TextAttribute())
     }
 
-    fun addImage(uri: Uri): TextEditorValue {
-        val imageContentValue = ImageContentValue(uri = uri)
-        return addContent(imageContentValue)
+    fun addImage(path: String): TextEditorValue {
+        return addContent(ImageAttribute(path))
     }
 
-    fun addVideo(uri: Uri): TextEditorValue {
-        val videoContent = VideoContentValue(uri = uri)
-        return addContent(videoContent)
+    fun addVideo(path: String): TextEditorValue {
+        return addContent(VideoAttribute(path))
     }
 
     private fun splitAndAdd(
-        focusedRichText: RichTextValue,
-        contentValue: ContentValue
+        textAttribute: TextAttribute,
+        newAttribute: EditorAttribute
     ): TextEditorValue {
-        val cursorPosition = focusedRichText.textFieldValue.selection.end
-        val index = values.indexOf(focusedRichText)
+        val cursorPosition = textAttribute.selection.end
+        val index = values.indexOf(textAttribute)
         if (cursorPosition >= 0) {
             clearFocus()
-            val (value1, value2) = focusedRichText.split(cursorPosition)
-            values[index] = value1
-            values.add(index + 1, contentValue)
-            return add(value2, index + 2)
+            val (value1, value2) = textAttribute.value.split(cursorPosition)
+            values[index] = TextAttribute(value1)
+            values.add(index + 1, newAttribute)
+            return add(TextAttribute(value2), index + 2)
         }
 
         return this
@@ -156,14 +159,14 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
     internal fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
         if (index != -1 && index < values.size) {
-            values[index].isFocused = false
+            focusedAttributeIndex = -1
         }
         if (upIndex != -1 && upIndex < values.size) {
             val item = values[upIndex]
-            if ((item.type == ContentType.IMAGE || item.type == ContentType.VIDEO) && item.isFocused) {
+            if (item.scope == AttributeScope.EMBEDS && upIndex == focusedAttributeIndex) {
                 return handleRemoveAndMerge(upIndex)
             } else {
-                item.isFocused = true
+                focusedAttributeIndex = upIndex
             }
             return update(item, upIndex)
         }
@@ -175,29 +178,20 @@ class TextEditorValue internal constructor(internal val values: MutableList<Cont
         val nextItem = values.elementAtOrNull(index + 1) ?: return this
         clearFocus()
         remove(index)
-        if (previousItem.type == ContentType.RICH_TEXT && nextItem.type == ContentType.RICH_TEXT) {
-            if ((nextItem as RichTextValue).text.isNotEmpty()) {
-                val value = (previousItem as RichTextValue).merge(nextItem)
-                value.isFocused = true
-                update(value, index - 1)
+        if (previousItem.scope == AttributeScope.TEXTS && nextItem.scope == AttributeScope.TEXTS) {
+            if (!(nextItem as TextAttribute).isEmpty) {
+                (previousItem as TextAttribute).value.merge(nextItem.value)
             } else {
-                previousItem.isFocused = true
+                focusedAttributeIndex = index - 1
                 update(previousItem, index - 1)
             }
-             remove(nextItem)
+            focusedAttributeIndex = index - 1
+            update(previousItem, index - 1)
+            remove(nextItem)
         }
 
         return TextEditorValue(values)
     }
-}
-
-enum class ContentType {
-    IMAGE, RICH_TEXT, VIDEO
-}
-
-abstract class ContentValue {
-    abstract val type: ContentType
-    abstract var isFocused: Boolean
 }
 
 

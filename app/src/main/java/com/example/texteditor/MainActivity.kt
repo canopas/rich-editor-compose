@@ -39,9 +39,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.canopas.editor.ui.RichEditor
+import com.canopas.editor.ui.data.RichText
+import com.canopas.editor.ui.data.RichTextAttribute
 import com.canopas.editor.ui.data.TextEditorValue
-import com.canopas.editor.ui.model.RichText
-import com.canopas.editor.ui.model.RichTextAttribute
 import com.canopas.editor.ui.rememberEditorState
 import com.example.texteditor.ui.theme.TextEditorTheme
 
@@ -216,7 +216,7 @@ fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
-            uri?.let { onValueChange(value.addImage(it)) }
+            uri?.let { onValueChange(value.addImage(it.toString())) }
         }
     )
 
@@ -244,7 +244,7 @@ fun VideoPicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
-            uri?.let { onValueChange(value.addVideo(it)) }
+            uri?.let { onValueChange(value.addVideo(it.toString())) }
         }
     )
 

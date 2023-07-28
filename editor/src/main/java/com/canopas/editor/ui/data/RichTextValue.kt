@@ -8,9 +8,6 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import com.canopas.editor.ui.model.AttributeScope
-import com.canopas.editor.ui.model.RichTextAttribute
-import com.canopas.editor.ui.model.RichTextPart
 import kotlin.math.max
 import kotlin.math.min
 
@@ -19,7 +16,7 @@ data class RichTextValue constructor(
     internal var textFieldValue: TextFieldValue,
     internal val currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
     internal val parts: MutableList<RichTextPart> = mutableListOf()
-) : ContentValue() {
+) {
 
     constructor(
         text: String = "",
@@ -32,9 +29,6 @@ data class RichTextValue constructor(
     )
 
     val text get() = textFieldValue.text
-
-    override val type: ContentType = ContentType.RICH_TEXT
-    override var isFocused: Boolean = false
 
     internal val visualTransformation
         get() = VisualTransformation {
@@ -240,7 +234,7 @@ data class RichTextValue constructor(
     }
 
     private fun removeTitleStylesIfAny() {
-        val isHeader = currentStyles.any { it.scope == AttributeScope.HEADER }
+        val isHeader = currentStyles.any { it.scope == TextAttributeScope.HEADER }
         if (isHeader) clearStyles()
     }
 
@@ -467,11 +461,7 @@ data class RichTextValue constructor(
 
         val newList = forwardParts(copyParts, cursorPosition).toMutableList()
         val textValue2 =
-            RichTextValue(text = subtext2, currentStyles.toMutableSet(), parts = newList).apply {
-                isFocused = true
-            }
-
-        this.isFocused = false
+            RichTextValue(text = subtext2, currentStyles.toMutableSet(), parts = newList)
         return Pair(this, textValue2)
     }
 

@@ -50,11 +50,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
-import com.canopas.editor.ui.data.ContentType
-import com.canopas.editor.ui.data.ImageContentValue
-import com.canopas.editor.ui.data.RichTextValue
+import com.canopas.editor.ui.data.EditorAttribute
+import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.TextEditorValue
-import com.canopas.editor.ui.data.VideoContentValue
 
 @Composable
 fun RichEditor(
@@ -67,36 +65,33 @@ fun RichEditor(
 
     Column(modifier.verticalScroll(scrollState)) {
         state.values.forEachIndexed { index, value ->
-            when (value.type) {
-                ContentType.RICH_TEXT -> {
-                    val richText = value as RichTextValue
-
-                    TextFieldComponent(richText, onValueChange = {
+            val isFocused = state.focusedAttributeIndex == index
+            when (value) {
+                is TextAttribute -> {
+                    TextFieldComponent(value, isFocused, onValueChange = {
                         onValueChange(state.update(it, index))
-                    }, onFocusChange = { isFocused ->
-                        onValueChange(state.setFocused(index, isFocused))
+                    }, onFocusChange = {
+                        onValueChange(state.setFocused(index, it))
                     }, onFocusUp = {
                         onValueChange(state.focusUp(index))
                     })
                 }
 
-                ContentType.IMAGE -> {
-                    val imageContentValue = value as ImageContentValue
-                    ImageComponent(imageContentValue, onToggleSelection = { isFocused ->
-                        if (isFocused) focusManager.clearFocus(true)
-                        onValueChange(state.setFocused(index, isFocused))
+                is EditorAttribute.ImageAttribute -> {
+                    ImageComponent(value, isFocused, onToggleSelection = { focused ->
+                        if (focused) focusManager.clearFocus(true)
+                        onValueChange(state.setFocused(index, focused))
                     }, onRemoveClicked = {
                         onValueChange(state.removeContent(index))
                     })
                 }
 
-                ContentType.VIDEO -> {
-                    val contentValue = value as VideoContentValue
+                is EditorAttribute.VideoAttribute -> {
                     VideoComponent(
-                        contentValue,
-                        onToggleSelection = { isFocused ->
-                            if (isFocused) focusManager.clearFocus(true)
-                            onValueChange(state.setFocused(index, isFocused))
+                        value, isFocused,
+                        onToggleSelection = { focused ->
+                            if (focused) focusManager.clearFocus(true)
+                            onValueChange(state.setFocused(index, focused))
                         },
                         onRemoveClicked = {
                             onValueChange(state.removeContent(index))
@@ -110,7 +105,8 @@ fun RichEditor(
 
 @Composable
 internal fun ImageComponent(
-    contentValue: ImageContentValue,
+    attribute: EditorAttribute.ImageAttribute,
+    isFocused: Boolean,
     onToggleSelection: (Boolean) -> Unit,
     onRemoveClicked: () -> Unit
 ) {
@@ -118,45 +114,45 @@ internal fun ImageComponent(
         .wrapContentSize()
         .border(
             1.dp,
-            if (contentValue.isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
+            if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
         )
         .clickable {
-            onToggleSelection(!contentValue.isFocused)
+            onToggleSelection(!isFocused)
         }) {
 
         AsyncImage(
-            model = contentValue.uri, contentDescription = null
+            model = attribute.value, contentDescription = null
         )
 
-        ContentDeleteButton(contentValue.isFocused, onRemoveClicked)
+        ContentDeleteButton(isFocused, onRemoveClicked)
     }
 }
 
 @Composable
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 internal fun VideoComponent(
-    contentValue: VideoContentValue,
+    attribute: EditorAttribute.VideoAttribute, isFocused: Boolean,
     onToggleSelection: (Boolean) -> Unit,
     onRemoveClicked: () -> Unit
 ) {
     val context = LocalContext.current
 
-    val exoPlayer = remember(contentValue.uri) {
+    val exoPlayer = remember(attribute.value) {
         ExoPlayer.Builder(context).build().also { exoPlayer ->
-            val mediaItem = MediaItem.fromUri(contentValue.uri)
+            val mediaItem = MediaItem.fromUri(attribute.value)
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
             exoPlayer.prepare()
             exoPlayer.addListener(object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
-                    if (isPlaying && !contentValue.isFocused) onToggleSelection(true)
+                    if (isPlaying && !isFocused) onToggleSelection(true)
                 }
             })
         }
     }
-    LaunchedEffect(key1 = contentValue.isFocused, block = {
-        if (!contentValue.isFocused) exoPlayer.playWhenReady = false
+    LaunchedEffect(key1 = isFocused, block = {
+        if (!isFocused) exoPlayer.playWhenReady = false
     })
 
     Box(
@@ -164,10 +160,10 @@ internal fun VideoComponent(
             .wrapContentSize()
             .border(
                 1.dp,
-                if (contentValue.isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
+                if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
             )
             .clickable {
-                onToggleSelection(!contentValue.isFocused)
+                onToggleSelection(!isFocused)
             }
     ) {
         AndroidView(
@@ -182,7 +178,7 @@ internal fun VideoComponent(
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
                     layoutParams = ViewGroup.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                     setOnClickListener {
-                        if (!contentValue.isFocused) onToggleSelection(true)
+                        if (!isFocused) onToggleSelection(true)
                     }
                 }
             },
@@ -190,10 +186,10 @@ internal fun VideoComponent(
                 .background(Color.Black, RoundedCornerShape(2.dp)),
         )
 
-        ContentDeleteButton(contentValue.isFocused, onRemoveClicked)
+        ContentDeleteButton(isFocused, onRemoveClicked)
     }
 
-    DisposableEffect(key1 = contentValue.uri, effect = {
+    DisposableEffect(key1 = attribute.value, effect = {
         onDispose {
             exoPlayer.release()
         }
@@ -203,16 +199,17 @@ internal fun VideoComponent(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun TextFieldComponent(
-    richText: RichTextValue,
-    onValueChange: (RichTextValue) -> Unit,
+    attribute: TextAttribute,
+    isFocused: Boolean,
+    onValueChange: (TextAttribute) -> Unit,
     onFocusChange: (Boolean) -> Unit,
     onFocusUp: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
     var previousFocusState by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = richText.isFocused, block = {
-        if (richText.isFocused) {
+    LaunchedEffect(key1 = isFocused, block = {
+        if (isFocused) {
             focusRequester.requestFocus()
         } else {
             focusRequester.freeFocus()
@@ -220,9 +217,9 @@ internal fun TextFieldComponent(
     })
 
     RichTextField(
-        value = richText,
+        value = attribute.value,
         onValueChange = {
-            onValueChange(it)
+            onValueChange(TextAttribute(it))
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -235,7 +232,7 @@ internal fun TextFieldComponent(
             }
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyUp && event.key == Key.Backspace) {
-                    if (richText.text.isEmpty() || richText.textFieldValue.selection.start == 0) {
+                    if (attribute.isEmpty || attribute.selection.start == 0) {
                         onFocusUp()
                         return@onKeyEvent true
                     }

@@ -1,4 +1,4 @@
-package com.canopas.editor.ui.model
+package com.canopas.editor.ui.data
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -8,9 +8,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
-enum class AttributeScope {
+
+enum class TextAttributeScope {
     INLINE,
-    HEADER, EMBED
+    HEADER
 }
 
 object RichText {
@@ -30,14 +31,14 @@ object RichText {
 
 sealed interface RichTextAttribute {
     val key: String?
-    val scope: AttributeScope?
+    val scope: TextAttributeScope?
     fun apply(style: SpanStyle): SpanStyle
 
     object BoldAttribute : RichTextAttribute {
         override val key: String
             get() = "bold"
-        override val scope: AttributeScope
-            get() = AttributeScope.INLINE
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.INLINE
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(fontWeight = FontWeight.Bold)
@@ -47,8 +48,8 @@ sealed interface RichTextAttribute {
     object ItalicAttribute : RichTextAttribute {
         override val key: String
             get() = "italic"
-        override val scope: AttributeScope
-            get() = AttributeScope.INLINE
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.INLINE
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(fontStyle = FontStyle.Italic)
@@ -59,8 +60,8 @@ sealed interface RichTextAttribute {
     object UnderlineAttribute : RichTextAttribute {
         override val key: String
             get() = "underline"
-        override val scope: AttributeScope
-            get() = AttributeScope.INLINE
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.INLINE
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -87,8 +88,8 @@ sealed interface RichTextAttribute {
 
         override val key: String
             get() = "text"
-        override val scope: AttributeScope
-            get() = AttributeScope.INLINE
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.INLINE
     }
 
     object TITLE : RichTextAttribute {
@@ -102,8 +103,8 @@ sealed interface RichTextAttribute {
 
         override val key: String
             get() = "title"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
     }
 
     object SUB_TITLE : RichTextAttribute {
@@ -118,8 +119,8 @@ sealed interface RichTextAttribute {
 
         override val key: String
             get() = "sub_title"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
     }
 
@@ -127,8 +128,8 @@ sealed interface RichTextAttribute {
     object H1 : RichTextAttribute {
         override val key: String
             get() = "header1"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -142,8 +143,8 @@ sealed interface RichTextAttribute {
     object H2 : RichTextAttribute {
         override val key: String
             get() = "header2"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -156,8 +157,8 @@ sealed interface RichTextAttribute {
     object H3 : RichTextAttribute {
         override val key: String
             get() = "header3"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -170,8 +171,8 @@ sealed interface RichTextAttribute {
     object H4 : RichTextAttribute {
         override val key: String
             get() = "header4"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -185,8 +186,8 @@ sealed interface RichTextAttribute {
     object H5 : RichTextAttribute {
         override val key: String
             get() = "header5"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -199,8 +200,8 @@ sealed interface RichTextAttribute {
     object H6 : RichTextAttribute {
         override val key: String
             get() = "header6"
-        override val scope: AttributeScope
-            get() = AttributeScope.HEADER
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.HEADER
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -213,8 +214,8 @@ sealed interface RichTextAttribute {
     data class FontSize(val fontSize: TextUnit) : RichTextAttribute {
         override val key: String
             get() = "font_size"
-        override val scope: AttributeScope
-            get() = AttributeScope.INLINE
+        override val scope: TextAttributeScope
+            get() = TextAttributeScope.INLINE
 
         override fun apply(style: SpanStyle): SpanStyle {
             return style.copy(
@@ -225,18 +226,4 @@ sealed interface RichTextAttribute {
         }
     }
 
-
-//    data class ImageAttribute(override val value: String) : RichTextAttribute<String> {
-//        override val key: String
-//            get() = "image"
-//        override val scope: RichTextAttributeScope
-//            get() = RichTextAttributeScope.EMBEDS
-//    }
-
-//    data class VideoAttribute(override val value: String) : Attribute<String> {
-//        override val key: String
-//            get() = "video"
-//        override val scope: AttributeScope
-//            get() = AttributeScope.EMBEDS
-//    }
 }
