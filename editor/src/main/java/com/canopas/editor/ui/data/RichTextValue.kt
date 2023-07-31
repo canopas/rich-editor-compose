@@ -1,6 +1,10 @@
 package com.canopas.editor.ui.data
 
-import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
@@ -11,11 +15,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import kotlin.math.max
 import kotlin.math.min
 
-@Immutable
 data class RichTextValue constructor(
-    internal var textFieldValue: TextFieldValue,
-    internal val currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
-    internal val parts: MutableList<RichTextPart> = mutableListOf()
+    internal val textFieldState: MutableState<TextFieldValue>,
+    internal val currentStyles: MutableList<RichTextAttribute> = mutableListOf(),
+    internal val parts: SnapshotStateList<RichTextPart> = mutableStateListOf()
 ) {
 
     constructor(
@@ -23,15 +26,23 @@ data class RichTextValue constructor(
         currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
         parts: MutableList<RichTextPart> = mutableListOf()
     ) : this(
-        textFieldValue = TextFieldValue(text = text, selection = TextRange(text.length)),
-        currentStyles,
-        parts
+        textFieldState = mutableStateOf(
+            TextFieldValue(
+                text = text,
+                selection = TextRange(text.length)
+            )
+        ),
+        currentStyles.toMutableStateList(),
+        parts.toMutableStateList()
     )
 
+    val textFieldValue get() = textFieldState.value
     val text get() = textFieldValue.text
 
     internal val visualTransformation
         get() = VisualTransformation {
+
+
             TransformedText(
                 text = annotatedString,
                 offsetMapping = OffsetMapping.Identity
@@ -79,10 +90,8 @@ data class RichTextValue constructor(
 
     private fun applyStylesToSelectedText(vararg style: RichTextAttribute) {
         updateSelectedTextParts { part ->
-            val styles = part.styles.toMutableSet()
-            styles.addAll(style.toSet())
-
-            part.copy(styles = styles)
+            part.styles.addAll(style.toSet())
+            part
         }
     }
 
@@ -94,10 +103,8 @@ data class RichTextValue constructor(
 
     private fun removeStylesFromSelectedText(vararg style: RichTextAttribute) {
         updateSelectedTextParts { part ->
-            val styles = part.styles.toMutableSet()
-            styles.removeAll(style.toSet())
-
-            part.copy(styles = styles)
+            part.styles.removeAll(style.toSet())
+            part
         }
     }
 
@@ -113,7 +120,7 @@ data class RichTextValue constructor(
 
         collapseParts(textLastIndex = newTextFieldValue.text.lastIndex)
 
-        textFieldValue = newTextFieldValue
+        textFieldState.value = newTextFieldValue
         return this
     }
 
@@ -121,14 +128,14 @@ data class RichTextValue constructor(
         newValue: TextFieldValue,
     ): TextFieldValue {
 
-        var currentStyles = currentStyles.toSet()
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
         if (newValue.text.getOrNull(startTypeIndex) == '\n') {
             removeTitleStylesIfAny()
-            currentStyles = setOf()
         }
+
+        val currentStyles = currentStyles.toMutableStateList()
 
         val startRichTextPartIndex = parts.indexOfFirst {
             (startTypeIndex - 1) in it.fromIndex..it.toIndex
@@ -178,7 +185,7 @@ data class RichTextValue constructor(
                 startRichTextPartIndex + 1, RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    styles = currentStyles
+                    styles = currentStyles.toMutableStateList()
                 )
             )
 
@@ -245,9 +252,8 @@ data class RichTextValue constructor(
 
     private fun removeAllStylesFromSelectedText() {
         updateSelectedTextParts { part ->
-            part.copy(
-                styles = emptySet()
-            )
+            part.styles.clear()
+            part
         }
     }
 
@@ -455,7 +461,7 @@ data class RichTextValue constructor(
         val subtext2 = text.substring(cursorPosition)
         val textParts1 = removeParts(parts, cursorPosition).toMutableList()
 
-        this.textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
+        this.textFieldState.value = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
         this.parts.clear()
         this.parts.addAll(textParts1)
 
@@ -497,7 +503,7 @@ data class RichTextValue constructor(
         val existingParts = ArrayList(this.parts)
         this.parts.addAll(nextItem.parts)
         forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
-        this.textFieldValue = TextFieldValue(text, selection = TextRange(text.length))
+        this.textFieldState.value = TextFieldValue(text, selection = TextRange(text.length))
         return this
     }
 

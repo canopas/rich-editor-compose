@@ -1,5 +1,6 @@
 package com.canopas.editor.ui
 
+import android.util.Log
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.foundation.background
@@ -216,10 +217,12 @@ internal fun TextFieldComponent(
         }
     })
 
+    Log.d("XXX", "editor text ${attribute.richText.text}")
+
     RichTextField(
-        value = attribute.value,
+        value = attribute.richText,
         onValueChange = {
-            attribute.richText.value = it
+            // attribute.richText = it
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -267,6 +270,6 @@ private fun BoxScope.ContentDeleteButton(focused: Boolean, onRemoveClicked: () -
 
 @Composable
 fun rememberEditorState(): TextEditorValue {
-    val favourites = remember { mutableStateListOf<EditorAttribute>() }
-    return remember { TextEditorValue(favourites) }
+    val attribute = remember { mutableStateListOf<EditorAttribute>() }
+    return remember { TextEditorValue(attribute) }
 }

@@ -76,7 +76,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
     fun hasStyle(style: RichTextAttribute): Boolean {
         return attributes.filterIndexed { index, value ->
             focusedAttributeIndex == index && value.scope == AttributeScope.TEXTS
-        }.any { (it as TextAttribute).value.hasStyle(style) }
+        }.any { (it as TextAttribute).richText.hasStyle(style) }
     }
 
     private fun getRichTexts(): List<TextAttribute> =
@@ -85,8 +85,9 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
     fun toggleStyle(style: RichTextAttribute): TextEditorValue {
         attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
-                val richText = ((value as TextAttribute).value).toggleStyle(style)
-                (attributes[index] as TextAttribute).richText.value = richText
+                //  val richText =
+                ((value as TextAttribute)).richText.toggleStyle(style)
+                //  (attributes[index] as TextAttribute).richText = richText
             }
         }
 
@@ -96,8 +97,9 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
     fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
         attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
-                val richText = ((value as TextAttribute).value).updateStyles(styles)
-                (attributes[index] as TextAttribute).richText.value = richText
+                // val richText =
+                ((value as TextAttribute)).richText.updateStyles(styles)
+                //(attributes[index] as TextAttribute).richText = richText
             }
         }
 
@@ -146,10 +148,10 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         val index = attributes.indexOf(textAttribute)
         if (cursorPosition >= 0) {
             clearFocus()
-            val (value1, value2) = textAttribute.value.split(cursorPosition)
-            attributes[index] = TextAttribute(mutableStateOf(value1))
+            val (value1, value2) = textAttribute.richText.split(cursorPosition)
+            attributes[index] = TextAttribute(value1)
             attributes.add(index + 1, newAttribute)
-            return add(TextAttribute(mutableStateOf(value2)), index + 2)
+            return add(TextAttribute(value2), index + 2)
         }
 
         return this
@@ -186,7 +188,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         remove(index)
         if (previousItem.scope == AttributeScope.TEXTS && nextItem.scope == AttributeScope.TEXTS) {
             if (!(nextItem as TextAttribute).isEmpty) {
-                (previousItem as TextAttribute).value.merge(nextItem.value)
+                (previousItem as TextAttribute).richText.merge(nextItem.richText)
             } else {
                 focusedAttributeIndexState = index - 1
                 update(previousItem, index - 1)
