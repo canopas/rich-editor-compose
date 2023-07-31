@@ -1,108 +1,114 @@
 package com.canopas.editor.ui.data
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
 
 @Immutable
-class TextEditorValue internal constructor(internal val values: MutableList<EditorAttribute> = mutableListOf()) {
+class TextEditorValue internal constructor(val attributes: MutableList<EditorAttribute> = mutableListOf()) {
 
-    var focusedAttributeIndex = -1
+    private var focusedAttributeIndexState by mutableStateOf(-1)
+
+
+    val focusedAttributeIndex: Int
+        get() = focusedAttributeIndexState
 
     init {
-        if (values.isEmpty()) {
-            focusedAttributeIndex = 0
-            values.add(TextAttribute())
+        if (attributes.isEmpty()) {
+            focusedAttributeIndexState = 0
+            attributes.add(TextAttribute())
         }
     }
 
-    fun getContent() = values
+    fun getContent() = attributes
 
     fun setContent(content: List<EditorAttribute>) {
-        values.clear()
+        attributes.clear()
         if (content.isNotEmpty()) {
-            values.addAll(content)
+            attributes.addAll(content)
         } else {
-            values.add(TextAttribute())
+            attributes.add(TextAttribute())
         }
     }
 
     internal fun update(value: EditorAttribute, index: Int): TextEditorValue {
-        if (index != -1 && index < values.size) {
-            values[index] = value
-            return TextEditorValue(values)
+        if (index != -1 && index < attributes.size) {
+            attributes[index] = value
+            return this
         }
         return this
     }
 
     private fun remove(index: Int): TextEditorValue {
         if (index != -1) {
-            values.removeAt(index)
+            attributes.removeAt(index)
         }
-        return TextEditorValue(values)
+        return this
     }
 
     private fun remove(value: EditorAttribute): TextEditorValue {
-        values.remove(value)
-        return TextEditorValue(values)
+        attributes.remove(value)
+        return this
     }
 
     private fun add(value: EditorAttribute, index: Int = -1): TextEditorValue {
         if (index != -1) {
-            values.add(index, value)
+            attributes.add(index, value)
         } else {
-            values.add(value)
+            attributes.add(value)
         }
 
-        return TextEditorValue(values)
+        return this
     }
 
-    internal fun setFocused(index: Int, isFocused: Boolean): TextEditorValue {
-        if (index == -1 || index >= values.size) return this
-        if (isFocused && focusedAttributeIndex == index) return this
+    internal fun setFocused(index: Int, isFocused: Boolean) {
+        if (index == -1 || index >= attributes.size) return
+        if (isFocused && focusedAttributeIndex == index) return
 
-        if (isFocused) focusedAttributeIndex = index
-        else if (focusedAttributeIndex == index) focusedAttributeIndex = -1
-        return TextEditorValue(values)
+        if (isFocused) focusedAttributeIndexState = index
+        else if (focusedAttributeIndex == index) focusedAttributeIndexState = -1
     }
 
     fun hasStyle(style: RichTextAttribute): Boolean {
-        return values.filterIndexed { index, value ->
+        return attributes.filterIndexed { index, value ->
             focusedAttributeIndex == index && value.scope == AttributeScope.TEXTS
         }.any { (it as TextAttribute).value.hasStyle(style) }
     }
 
     private fun getRichTexts(): List<TextAttribute> =
-        values.filter { it.scope == AttributeScope.TEXTS }.map { it as TextAttribute }
+        attributes.filter { it.scope == AttributeScope.TEXTS }.map { it as TextAttribute }
 
     fun toggleStyle(style: RichTextAttribute): TextEditorValue {
-        values.forEachIndexed { index, value ->
+        attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
                 val richText = ((value as TextAttribute).value).toggleStyle(style)
-                values[index] = TextAttribute(richText)
+                (attributes[index] as TextAttribute).richText.value = richText
             }
         }
 
-        return TextEditorValue(values)
+        return this
     }
 
     fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
-        values.forEachIndexed { index, value ->
+        attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
                 val richText = ((value as TextAttribute).value).updateStyles(styles)
-                values[index] = TextAttribute(richText)
+                (attributes[index] as TextAttribute).richText.value = richText
             }
         }
 
-        return TextEditorValue(values)
+        return this
     }
 
     private fun clearFocus() {
-        focusedAttributeIndex = -1
+        focusedAttributeIndexState = -1
     }
 
-    private fun focusedAttribute() = values.elementAtOrNull(focusedAttributeIndex)
+    private fun focusedAttribute() = attributes.elementAtOrNull(focusedAttributeIndex)
 
     private fun addContent(attribute: EditorAttribute): TextEditorValue {
         val focusedAttribute = focusedAttribute()
@@ -113,14 +119,14 @@ class TextEditorValue internal constructor(internal val values: MutableList<Edit
             }
         }
 
-        val value = values.last()
+        val value = attributes.last()
         if (value.scope == AttributeScope.TEXTS && (value as TextAttribute).isEmpty) {
-            return add(attribute, values.lastIndex)
+            return add(attribute, attributes.lastIndex)
         }
 
         clearFocus()
 
-        values.add(attribute)
+        attributes.add(attribute)
         return add(TextAttribute())
     }
 
@@ -137,20 +143,20 @@ class TextEditorValue internal constructor(internal val values: MutableList<Edit
         newAttribute: EditorAttribute
     ): TextEditorValue {
         val cursorPosition = textAttribute.selection.end
-        val index = values.indexOf(textAttribute)
+        val index = attributes.indexOf(textAttribute)
         if (cursorPosition >= 0) {
             clearFocus()
             val (value1, value2) = textAttribute.value.split(cursorPosition)
-            values[index] = TextAttribute(value1)
-            values.add(index + 1, newAttribute)
-            return add(TextAttribute(value2), index + 2)
+            attributes[index] = TextAttribute(mutableStateOf(value1))
+            attributes.add(index + 1, newAttribute)
+            return add(TextAttribute(mutableStateOf(value2)), index + 2)
         }
 
         return this
     }
 
     fun removeContent(index: Int): TextEditorValue {
-        if (index != -1 && index < values.size) {
+        if (index != -1 && index < attributes.size) {
             return handleRemoveAndMerge(index)
         }
         return this
@@ -158,15 +164,15 @@ class TextEditorValue internal constructor(internal val values: MutableList<Edit
 
     internal fun focusUp(index: Int): TextEditorValue {
         val upIndex = index - 1
-        if (index != -1 && index < values.size) {
-            focusedAttributeIndex = -1
+        if (index != -1 && index < attributes.size) {
+            focusedAttributeIndexState = -1
         }
-        if (upIndex != -1 && upIndex < values.size) {
-            val item = values[upIndex]
+        if (upIndex != -1 && upIndex < attributes.size) {
+            val item = attributes[upIndex]
             if (item.scope == AttributeScope.EMBEDS && upIndex == focusedAttributeIndex) {
                 return handleRemoveAndMerge(upIndex)
             } else {
-                focusedAttributeIndex = upIndex
+                focusedAttributeIndexState = upIndex
             }
             return update(item, upIndex)
         }
@@ -174,25 +180,22 @@ class TextEditorValue internal constructor(internal val values: MutableList<Edit
     }
 
     private fun handleRemoveAndMerge(index: Int): TextEditorValue {
-        val previousItem = values.elementAtOrNull(index - 1) ?: return remove(index)
-        val nextItem = values.elementAtOrNull(index + 1) ?: return this
+        val previousItem = attributes.elementAtOrNull(index - 1) ?: return remove(index)
+        val nextItem = attributes.elementAtOrNull(index + 1) ?: return this
         clearFocus()
         remove(index)
         if (previousItem.scope == AttributeScope.TEXTS && nextItem.scope == AttributeScope.TEXTS) {
             if (!(nextItem as TextAttribute).isEmpty) {
                 (previousItem as TextAttribute).value.merge(nextItem.value)
             } else {
-                focusedAttributeIndex = index - 1
+                focusedAttributeIndexState = index - 1
                 update(previousItem, index - 1)
             }
-            focusedAttributeIndex = index - 1
+            focusedAttributeIndexState = index - 1
             update(previousItem, index - 1)
             remove(nextItem)
         }
 
-        return TextEditorValue(values)
+        return this
     }
 }
-
-
-

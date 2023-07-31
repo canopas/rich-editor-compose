@@ -1,5 +1,8 @@
 package com.canopas.editor.ui.data
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+
 enum class AttributeScope {
     EMBEDS, TEXTS
 }
@@ -22,12 +25,15 @@ sealed interface EditorAttribute {
             get() = AttributeScope.EMBEDS
     }
 
-    data class TextAttribute(val value: RichTextValue = RichTextValue()) : EditorAttribute {
+    data class TextAttribute(
+        val richText: MutableState<RichTextValue> = mutableStateOf(RichTextValue())
+    ) : EditorAttribute {
         override val key: String
             get() = "text"
         override val scope: AttributeScope
             get() = AttributeScope.TEXTS
 
+        val value get() = richText.value
         val isEmpty get() = value.text.isEmpty()
 
         val selection get() = value.textFieldValue.selection

@@ -65,17 +65,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Sample() {
     TextEditorTheme {
-        var state by rememberEditorState()
+        var state = rememberEditorState()
 
         Column {
 
             StyleContainer(state, onValueChange = {
-                state = it
+
             })
 
             RichEditor(
                 state = state,
-                onValueChange = { state = it },
+                onValueChange = { },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)

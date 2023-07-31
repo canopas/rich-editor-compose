@@ -23,8 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,25 +64,25 @@ fun RichEditor(
     val focusManager = LocalFocusManager.current
 
     Column(modifier.verticalScroll(scrollState)) {
-        state.values.forEachIndexed { index, value ->
+        state.attributes.forEachIndexed { index, value ->
             val isFocused = state.focusedAttributeIndex == index
             when (value) {
                 is TextAttribute -> {
                     TextFieldComponent(value, isFocused, onValueChange = {
-                        onValueChange(state.update(it, index))
+                        state.update(it, index)
                     }, onFocusChange = {
-                        onValueChange(state.setFocused(index, it))
+                        state.setFocused(index, it)
                     }, onFocusUp = {
-                        onValueChange(state.focusUp(index))
+                        state.focusUp(index)
                     })
                 }
 
                 is EditorAttribute.ImageAttribute -> {
                     ImageComponent(value, isFocused, onToggleSelection = { focused ->
                         if (focused) focusManager.clearFocus(true)
-                        onValueChange(state.setFocused(index, focused))
+                        state.setFocused(index, focused)
                     }, onRemoveClicked = {
-                        onValueChange(state.removeContent(index))
+                        state.removeContent(index)
                     })
                 }
 
@@ -91,10 +91,10 @@ fun RichEditor(
                         value, isFocused,
                         onToggleSelection = { focused ->
                             if (focused) focusManager.clearFocus(true)
-                            onValueChange(state.setFocused(index, focused))
+                            state.setFocused(index, focused)
                         },
                         onRemoveClicked = {
-                            onValueChange(state.removeContent(index))
+                            state.removeContent(index)
                         },
                     )
                 }
@@ -219,7 +219,7 @@ internal fun TextFieldComponent(
     RichTextField(
         value = attribute.value,
         onValueChange = {
-            onValueChange(TextAttribute(it))
+            attribute.richText.value = it
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -266,8 +266,7 @@ private fun BoxScope.ContentDeleteButton(focused: Boolean, onRemoveClicked: () -
 }
 
 @Composable
-fun rememberEditorState(): MutableState<TextEditorValue> {
-    return remember {
-        mutableStateOf(TextEditorValue())
-    }
+fun rememberEditorState(): TextEditorValue {
+    val favourites = remember { mutableStateListOf<EditorAttribute>() }
+    return remember { TextEditorValue(favourites) }
 }
