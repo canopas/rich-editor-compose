@@ -35,12 +35,10 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         }
     }
 
-    internal fun update(value: EditorAttribute, index: Int): TextEditorValue {
+    internal fun update(value: EditorAttribute, index: Int) {
         if (index != -1 && index < attributes.size) {
             attributes[index] = value
-            return this
         }
-        return this
     }
 
     private fun remove(index: Int): TextEditorValue {
@@ -176,7 +174,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
             } else {
                 focusedAttributeIndexState = upIndex
             }
-            return update(item, upIndex)
+            update(item, upIndex)
         }
         return this
     }

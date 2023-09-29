@@ -267,39 +267,40 @@ data class RichTextValue constructor(
 
         val removedIndexes = mutableSetOf<Int>()
 
-        parts.forEachIndexed { index, part ->
+        val iterator = parts.iterator()
+
+        val partsCopy = parts.toMutableList()
+
+        while (iterator.hasNext()) {
+            val part = iterator.next()
+            val index = partsCopy.indexOf(part)
+
             if (removeRange.last < part.fromIndex) {
-                // Example: L|orem| ipsum *dolor* sit amet.
-                parts[index] = part.copy(
+                partsCopy[index] = part.copy(
                     fromIndex = part.fromIndex - removedChars,
                     toIndex = part.toIndex - removedChars
                 )
             } else if (removeRange.first <= part.fromIndex && removeRange.last >= part.toIndex) {
-                // Example: Lorem| ipsum *dolor* si|t amet.
-                parts[index] = part.copy(
-                    fromIndex = 0,
-                    toIndex = 0
-                )
-                removedIndexes.add(index)
+                // Remove the element from the copy.
+                partsCopy.removeAt(index)
             } else if (removeRange.first <= part.fromIndex) {
-                // Example: Lorem| ipsum *dol|or* sit amet.
-                parts[index] = part.copy(
+                partsCopy[index] = part.copy(
                     fromIndex = max(0, removeRange.first),
                     toIndex = min(newTextFieldValue.text.length, part.toIndex - removedChars)
                 )
             } else if (removeRange.last <= part.toIndex) {
-                // Example: Lorem ipsum *d|olo|r* sit amet.
-                parts[index] = part.copy(
+                partsCopy[index] = part.copy(
                     toIndex = part.toIndex - removedChars
                 )
             } else if (removeRange.first < part.toIndex) {
-                // Example: Lorem ipsum *dol|or* si|t amet.
-                parts[index] = part.copy(
+                partsCopy[index] = part.copy(
                     toIndex = removeRange.first
                 )
             }
         }
-        removedIndexes.reversed().forEach { parts.removeAt(it) }
+
+        parts.clear()
+        parts.addAll(partsCopy)
     }
 
     private fun updateCurrentStyles(
@@ -398,12 +399,14 @@ data class RichTextValue constructor(
         val endRangeMap = mutableMapOf<Int, Int>()
         val removedIndexes = mutableSetOf<Int>()
 
-        parts.forEachIndexed { index, part ->
+        val partsCopy = parts.toMutableList() // Create a copy of the original parts
+
+        partsCopy.forEachIndexed { index, part ->
             startRangeMap[part.fromIndex] = index
             endRangeMap[part.toIndex] = index
         }
 
-        parts.forEachIndexed { index, part ->
+        partsCopy.forEachIndexed { index, part ->
             if (removedIndexes.contains(index)) {
                 return@forEachIndexed
             }
@@ -418,9 +421,9 @@ data class RichTextValue constructor(
 
             if (startRangeMap.containsKey(end + 1)) {
                 val otherRangeIndex = requireNotNull(startRangeMap[end + 1])
-                if (parts[otherRangeIndex].styles == part.styles) {
-                    parts[index] = part.copy(
-                        toIndex = parts[otherRangeIndex].toIndex
+                if (partsCopy[otherRangeIndex].styles == part.styles) {
+                    partsCopy[index] = part.copy(
+                        toIndex = partsCopy[otherRangeIndex].toIndex
                     )
 
                     // Remove collapsed values
@@ -432,9 +435,9 @@ data class RichTextValue constructor(
 
             if (endRangeMap.containsKey(start - 1)) {
                 val otherRangeIndex = requireNotNull(endRangeMap[start - 1])
-                if (parts[otherRangeIndex].styles == part.styles) {
-                    parts[index] = part.copy(
-                        fromIndex = parts[otherRangeIndex].fromIndex
+                if (partsCopy[otherRangeIndex].styles == part.styles) {
+                    partsCopy[index] = part.copy(
+                        fromIndex = partsCopy[otherRangeIndex].fromIndex
                     )
 
                     // Remove collapsed values
@@ -444,13 +447,17 @@ data class RichTextValue constructor(
                 }
             }
 
-            parts[index] = parts[index].copy(
-                fromIndex = max(0, parts[index].fromIndex),
-                toIndex = min(textLastIndex, parts[index].toIndex),
+            partsCopy[index] = partsCopy[index].copy(
+                fromIndex = max(0, partsCopy[index].fromIndex),
+                toIndex = min(textLastIndex, partsCopy[index].toIndex),
             )
         }
 
-        removedIndexes.reversed().forEach { parts.removeAt(it) }
+        removedIndexes.reversed().forEach { partsCopy.removeAt(it) }
+
+        // Replace the original parts with the modified copy
+        parts.clear()
+        parts.addAll(partsCopy)
     }
 
     internal fun split(cursorPosition: Int): Pair<RichTextValue, RichTextValue> {

@@ -73,7 +73,6 @@ fun Sample() {
 
             RichEditor(
                 state = state,
-                onValueChange = { },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)

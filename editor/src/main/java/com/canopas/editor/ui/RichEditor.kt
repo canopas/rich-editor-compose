@@ -1,6 +1,5 @@
 package com.canopas.editor.ui
 
-import android.util.Log
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.foundation.background
@@ -58,7 +57,6 @@ import com.canopas.editor.ui.data.TextEditorValue
 @Composable
 fun RichEditor(
     state: TextEditorValue,
-    onValueChange: (TextEditorValue) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -216,8 +214,6 @@ internal fun TextFieldComponent(
             focusRequester.freeFocus()
         }
     })
-
-    Log.d("XXX", "editor text ${attribute.richText.text}")
 
     RichTextField(
         value = attribute.richText,
