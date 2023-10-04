@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
+import com.canopas.editor.ui.split
 
 @Immutable
 class TextEditorValue internal constructor(val attributes: MutableList<EditorAttribute> = mutableListOf()) {
@@ -81,11 +82,9 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         attributes.filter { it.scope == AttributeScope.TEXTS }.map { it as TextAttribute }
 
     fun toggleStyle(style: RichTextAttribute): TextEditorValue {
-        attributes.forEachIndexed { index, value ->
+        attributes.forEach { value ->
             if (value.scope == AttributeScope.TEXTS) {
-                //  val richText =
                 ((value as TextAttribute)).richText.toggleStyle(style)
-                //  (attributes[index] as TextAttribute).richText = richText
             }
         }
 
@@ -95,9 +94,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
     fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
         attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
-                // val richText =
                 ((value as TextAttribute)).richText.updateStyles(styles)
-                //(attributes[index] as TextAttribute).richText = richText
             }
         }
 

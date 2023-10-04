@@ -32,7 +32,6 @@ internal fun RichTextField(
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() }
 ) {
-
     BasicTextField(
         value = value.textFieldValue,
         onValueChange = {

@@ -1,10 +1,10 @@
 package com.canopas.editor.ui.data
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
@@ -16,9 +16,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 data class RichTextValue constructor(
-    internal val textFieldState: MutableState<TextFieldValue>,
+    internal var textFieldValue: TextFieldValue,
     internal val currentStyles: MutableList<RichTextAttribute> = mutableListOf(),
-    internal val parts: SnapshotStateList<RichTextPart> = mutableStateListOf()
+    internal val parts: MutableList<RichTextPart> = mutableListOf()
 ) {
 
     constructor(
@@ -26,32 +26,26 @@ data class RichTextValue constructor(
         currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
         parts: MutableList<RichTextPart> = mutableListOf()
     ) : this(
-        textFieldState = mutableStateOf(
-            TextFieldValue(
-                text = text,
-                selection = TextRange(text.length)
-            )
+        textFieldValue = TextFieldValue(
+            text = text,
+            selection = TextRange(text.length)
         ),
         currentStyles.toMutableStateList(),
         parts.toMutableStateList()
-    )
+    ) {
+        updateAnnotatedString()
+    }
 
-    val textFieldValue get() = textFieldState.value
+
     val text get() = textFieldValue.text
 
-    internal val visualTransformation
-        get() = VisualTransformation {
+    internal var visualTransformation: VisualTransformation by mutableStateOf(VisualTransformation.None)
 
+    private var annotatedString by mutableStateOf(AnnotatedString(text = ""))
 
-            TransformedText(
-                text = annotatedString,
-                offsetMapping = OffsetMapping.Identity
-            )
-        }
-
-    private val annotatedString
-        get() = buildAnnotatedString {
-            append(textFieldValue.text)
+    fun updateAnnotatedString(newValue: TextFieldValue = textFieldValue) {
+        annotatedString = buildAnnotatedString {
+            append(newValue.text)
             parts.forEach { part ->
                 val spanStyle = part.styles.fold(SpanStyle()) { spanStyle, richTextStyle ->
                     richTextStyle.apply(spanStyle)
@@ -64,28 +58,34 @@ data class RichTextValue constructor(
                 )
             }
         }
+        textFieldValue = newValue
+        visualTransformation = VisualTransformation { _ ->
+            TransformedText(
+                annotatedString,
+                OffsetMapping.Identity
+            )
+        }
+    }
 
-    fun toggleStyle(style: RichTextAttribute): RichTextValue {
+
+    fun toggleStyle(style: RichTextAttribute) {
         if (currentStyles.contains(style)) {
             removeStyle(style)
         } else {
             addStyle(style)
         }
-        return this
     }
 
-    private fun addStyle(vararg style: RichTextAttribute): RichTextValue {
+    private fun addStyle(vararg style: RichTextAttribute) {
         currentStyles.addAll(style)
         applyStylesToSelectedText(*style)
-        return this
     }
 
-    fun updateStyles(newStyles: Set<RichTextAttribute>): RichTextValue {
+    fun updateStyles(newStyles: Set<RichTextAttribute>) {
         currentStyles.clear()
         currentStyles.addAll(newStyles)
 
         applyStylesToSelectedText(*newStyles.toTypedArray())
-        return this
     }
 
     private fun applyStylesToSelectedText(vararg style: RichTextAttribute) {
@@ -93,12 +93,12 @@ data class RichTextValue constructor(
             part.styles.addAll(style.toSet())
             part
         }
+        updateAnnotatedString()
     }
 
-    private fun removeStyle(vararg style: RichTextAttribute): RichTextValue {
+    private fun removeStyle(vararg style: RichTextAttribute) {
         currentStyles.removeAll(style.toSet())
         removeStylesFromSelectedText(*style)
-        return this
     }
 
     private fun removeStylesFromSelectedText(vararg style: RichTextAttribute) {
@@ -106,6 +106,7 @@ data class RichTextValue constructor(
             part.styles.removeAll(style.toSet())
             part
         }
+        updateAnnotatedString()
     }
 
     fun updateTextFieldValue(newValue: TextFieldValue): RichTextValue {
@@ -120,7 +121,7 @@ data class RichTextValue constructor(
 
         collapseParts(textLastIndex = newTextFieldValue.text.lastIndex)
 
-        textFieldState.value = newTextFieldValue
+        updateAnnotatedString(newValue)
         return this
     }
 
@@ -265,8 +266,6 @@ data class RichTextValue constructor(
         val endRemoveIndex = newTextFieldValue.selection.min
         val removeRange = endRemoveIndex until startRemoveIndex
 
-        val removedIndexes = mutableSetOf<Int>()
-
         val iterator = parts.iterator()
 
         val partsCopy = parts.toMutableList()
@@ -289,13 +288,9 @@ data class RichTextValue constructor(
                     toIndex = min(newTextFieldValue.text.length, part.toIndex - removedChars)
                 )
             } else if (removeRange.last <= part.toIndex) {
-                partsCopy[index] = part.copy(
-                    toIndex = part.toIndex - removedChars
-                )
+                partsCopy[index] = part.copy(toIndex = part.toIndex - removedChars)
             } else if (removeRange.first < part.toIndex) {
-                partsCopy[index] = part.copy(
-                    toIndex = removeRange.first
-                )
+                partsCopy[index] = part.copy(toIndex = removeRange.first)
             }
         }
 
@@ -343,9 +338,7 @@ data class RichTextValue constructor(
             if (index !in parts.indices) return@forEach
 
             if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
-                parts[index] = part.copy(
-                    toIndex = fromIndex - 1
-                )
+                parts[index] = part.copy(toIndex = fromIndex - 1)
                 parts.add(
                     index + 1,
                     update(
@@ -355,36 +348,15 @@ data class RichTextValue constructor(
                         )
                     )
                 )
-                parts.add(
-                    index + 2,
-                    part.copy(
-                        fromIndex = toIndex,
-                    )
-                )
+                parts.add(index + 2, part.copy(fromIndex = toIndex))
             } else if (part.fromIndex < fromIndex) {
                 parts[index] = part.copy(
                     toIndex = fromIndex - 1
                 )
-                parts.add(
-                    index + 1,
-                    update(
-                        part.copy(
-                            fromIndex = fromIndex,
-                        )
-                    )
-                )
+                parts.add(index + 1, update(part.copy(fromIndex = fromIndex)))
             } else if (part.toIndex >= toIndex) {
-                parts[index] = update(
-                    part.copy(
-                        toIndex = toIndex - 1
-                    )
-                )
-                parts.add(
-                    index + 1,
-                    part.copy(
-                        fromIndex = toIndex,
-                    )
-                )
+                parts[index] = update(part.copy(toIndex = toIndex - 1))
+                parts.add(index + 1, part.copy(fromIndex = toIndex))
             } else {
                 parts[index] = update(part)
             }
@@ -460,60 +432,15 @@ data class RichTextValue constructor(
         parts.addAll(partsCopy)
     }
 
-    internal fun split(cursorPosition: Int): Pair<RichTextValue, RichTextValue> {
-        if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
-
-        val copyParts = ArrayList(parts)
-        val subtext1 = text.substring(0, cursorPosition)
-        val subtext2 = text.substring(cursorPosition)
-        val textParts1 = removeParts(parts, cursorPosition).toMutableList()
-
-        this.textFieldState.value = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
-        this.parts.clear()
-        this.parts.addAll(textParts1)
-
-        val newList = forwardParts(copyParts, cursorPosition).toMutableList()
-        val textValue2 =
-            RichTextValue(text = subtext2, currentStyles.toMutableSet(), parts = newList)
-        return Pair(this, textValue2)
-    }
-
-    private fun removeParts(
-        originalList: List<RichTextPart>,
-        cursorPosition: Int
-    ): List<RichTextPart> {
-        return originalList.filter { it.fromIndex <= cursorPosition - 1 }
-            .map { textPart ->
-                val updatedFromIndex = textPart.fromIndex
-                val updatedToIndex =
-                    if (cursorPosition > textPart.toIndex) textPart.toIndex else cursorPosition - 1
-                RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
-            }
-    }
-
-    private fun forwardParts(
-        originalList: List<RichTextPart>,
-        cursorPosition: Int
-    ): List<RichTextPart> {
-        return originalList.filter { it.toIndex >= cursorPosition }
-            .map { textPart ->
-                val updatedFromIndex =
-                    if (cursorPosition >= textPart.fromIndex) 0 else textPart.fromIndex - cursorPosition
-                val updatedToIndex =
-                    textPart.toIndex - cursorPosition
-                RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
-            }
-    }
-
     internal fun merge(nextItem: RichTextValue): RichTextValue {
         val text = this.text + "\n" + nextItem.text
         val existingParts = ArrayList(this.parts)
         this.parts.addAll(nextItem.parts)
         forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
-        this.textFieldState.value = TextFieldValue(text, selection = TextRange(text.length))
+        val newTextField = TextFieldValue(text, selection = TextRange(text.length))
+        updateAnnotatedString(newTextField)
         return this
     }
 
     fun hasStyle(style: RichTextAttribute) = currentStyles.any { it.key == style.key }
-
 }
