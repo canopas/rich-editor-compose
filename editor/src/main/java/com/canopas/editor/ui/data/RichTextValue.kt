@@ -109,10 +109,9 @@ data class RichTextValue constructor(
         updateAnnotatedString()
     }
 
-    fun updateTextFieldValue(newValue: TextFieldValue): RichTextValue {
-        var newTextFieldValue = newValue
+    fun updateTextFieldValue(newTextFieldValue: TextFieldValue) {
         if (newTextFieldValue.text.length > textFieldValue.text.length) {
-            newTextFieldValue = handleAddingCharacters(newTextFieldValue)
+            handleAddingCharacters(newTextFieldValue)
         } else if (newTextFieldValue.text.length < textFieldValue.text.length) {
             handleRemovingCharacters(newTextFieldValue)
         }
@@ -121,14 +120,10 @@ data class RichTextValue constructor(
 
         collapseParts(textLastIndex = newTextFieldValue.text.lastIndex)
 
-        updateAnnotatedString(newValue)
-        return this
+        updateAnnotatedString(newTextFieldValue)
     }
 
-    private fun handleAddingCharacters(
-        newValue: TextFieldValue,
-    ): TextFieldValue {
-
+    private fun handleAddingCharacters(newValue: TextFieldValue) {
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
@@ -222,8 +217,6 @@ data class RichTextValue constructor(
                 )
             }
         }
-
-        return newValue
     }
 
     private fun forwardParts(
@@ -432,14 +425,13 @@ data class RichTextValue constructor(
         parts.addAll(partsCopy)
     }
 
-    internal fun merge(nextItem: RichTextValue): RichTextValue {
+    internal fun merge(nextItem: RichTextValue) {
         val text = this.text + "\n" + nextItem.text
         val existingParts = ArrayList(this.parts)
         this.parts.addAll(nextItem.parts)
         forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
         val newTextField = TextFieldValue(text, selection = TextRange(text.length))
         updateAnnotatedString(newTextField)
-        return this
     }
 
     fun hasStyle(style: RichTextAttribute) = currentStyles.any { it.key == style.key }

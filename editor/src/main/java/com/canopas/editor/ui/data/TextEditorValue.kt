@@ -42,26 +42,22 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         }
     }
 
-    private fun remove(index: Int): TextEditorValue {
+    private fun remove(index: Int) {
         if (index != -1) {
             attributes.removeAt(index)
         }
-        return this
     }
 
-    private fun remove(value: EditorAttribute): TextEditorValue {
+    private fun remove(value: EditorAttribute) {
         attributes.remove(value)
-        return this
     }
 
-    private fun add(value: EditorAttribute, index: Int = -1): TextEditorValue {
+    private fun add(value: EditorAttribute, index: Int = -1) {
         if (index != -1) {
             attributes.add(index, value)
         } else {
             attributes.add(value)
         }
-
-        return this
     }
 
     internal fun setFocused(index: Int, isFocused: Boolean) {
@@ -91,14 +87,12 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         return this
     }
 
-    fun updateStyles(styles: Set<RichTextAttribute>): TextEditorValue {
+    fun updateStyles(styles: Set<RichTextAttribute>) {
         attributes.forEachIndexed { index, value ->
             if (value.scope == AttributeScope.TEXTS) {
                 ((value as TextAttribute)).richText.updateStyles(styles)
             }
         }
-
-        return this
     }
 
     private fun clearFocus() {
@@ -107,38 +101,40 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
 
     private fun focusedAttribute() = attributes.elementAtOrNull(focusedAttributeIndex)
 
-    private fun addContent(attribute: EditorAttribute): TextEditorValue {
+    private fun addContent(attribute: EditorAttribute) {
         val focusedAttribute = focusedAttribute()
 
         (focusedAttribute as? TextAttribute)?.let {
             if (!it.isEmpty) {
-                return splitAndAdd(it, attribute)
+                splitAndAdd(it, attribute)
+                return
             }
         }
 
         val value = attributes.last()
         if (value.scope == AttributeScope.TEXTS && (value as TextAttribute).isEmpty) {
-            return add(attribute, attributes.lastIndex)
+            add(attribute, attributes.lastIndex)
+            return
         }
 
         clearFocus()
 
         attributes.add(attribute)
-        return add(TextAttribute())
+        add(TextAttribute())
     }
 
-    fun addImage(path: String): TextEditorValue {
-        return addContent(ImageAttribute(path))
+    fun addImage(path: String) {
+        addContent(ImageAttribute(path))
     }
 
-    fun addVideo(path: String): TextEditorValue {
-        return addContent(VideoAttribute(path))
+    fun addVideo(path: String) {
+        addContent(VideoAttribute(path))
     }
 
     private fun splitAndAdd(
         textAttribute: TextAttribute,
         newAttribute: EditorAttribute
-    ): TextEditorValue {
+    ) {
         val cursorPosition = textAttribute.selection.end
         val index = attributes.indexOf(textAttribute)
         if (cursorPosition >= 0) {
@@ -146,20 +142,17 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
             val (value1, value2) = textAttribute.richText.split(cursorPosition)
             attributes[index] = TextAttribute(value1)
             attributes.add(index + 1, newAttribute)
-            return add(TextAttribute(value2), index + 2)
+            add(TextAttribute(value2), index + 2)
         }
-
-        return this
     }
 
-    fun removeContent(index: Int): TextEditorValue {
+    fun removeContent(index: Int) {
         if (index != -1 && index < attributes.size) {
-            return handleRemoveAndMerge(index)
+            handleRemoveAndMerge(index)
         }
-        return this
     }
 
-    internal fun focusUp(index: Int): TextEditorValue {
+    internal fun focusUp(index: Int) {
         val upIndex = index - 1
         if (index != -1 && index < attributes.size) {
             focusedAttributeIndexState = -1
@@ -167,18 +160,18 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         if (upIndex != -1 && upIndex < attributes.size) {
             val item = attributes[upIndex]
             if (item.scope == AttributeScope.EMBEDS && upIndex == focusedAttributeIndex) {
-                return handleRemoveAndMerge(upIndex)
+                handleRemoveAndMerge(upIndex)
+                return
             } else {
                 focusedAttributeIndexState = upIndex
             }
             update(item, upIndex)
         }
-        return this
     }
 
-    private fun handleRemoveAndMerge(index: Int): TextEditorValue {
+    private fun handleRemoveAndMerge(index: Int) {
         val previousItem = attributes.elementAtOrNull(index - 1) ?: return remove(index)
-        val nextItem = attributes.elementAtOrNull(index + 1) ?: return this
+        val nextItem = attributes.elementAtOrNull(index + 1) ?: return
         clearFocus()
         remove(index)
         if (previousItem.scope == AttributeScope.TEXTS && nextItem.scope == AttributeScope.TEXTS) {
@@ -192,7 +185,5 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
             update(previousItem, index - 1)
             remove(nextItem)
         }
-
-        return this
     }
 }

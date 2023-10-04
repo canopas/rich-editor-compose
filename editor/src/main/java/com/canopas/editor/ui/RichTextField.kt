@@ -17,7 +17,6 @@ import com.canopas.editor.ui.data.RichTextValue
 @Composable
 internal fun RichTextField(
     value: RichTextValue,
-    onValueChange: (RichTextValue) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,
@@ -35,7 +34,7 @@ internal fun RichTextField(
     BasicTextField(
         value = value.textFieldValue,
         onValueChange = {
-            onValueChange(value.updateTextFieldValue(it))
+            value.updateTextFieldValue(it)
         },
         modifier = modifier,
         enabled = enabled,

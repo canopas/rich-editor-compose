@@ -69,7 +69,7 @@ fun Sample() {
 
         Column {
 
-            StyleContainer(state, onValueChange = {})
+            StyleContainer(state)
 
             RichEditor(
                 state = state,
@@ -87,7 +87,6 @@ fun Sample() {
 @Composable
 fun StyleContainer(
     value: TextEditorValue,
-    onValueChange: (TextEditorValue) -> Unit,
 ) {
     Row(
         Modifier
@@ -97,51 +96,44 @@ fun StyleContainer(
         horizontalArrangement = Arrangement.Start,
     ) {
 
-        TitleStyleButton(value, onValueChange)
+        TitleStyleButton(value)
         StyleButton(
             icon = R.drawable.ic_bold,
             style = RichText.Bold,
             value = value,
-            onValueChange = onValueChange
-        )
+
+            )
 
         StyleButton(
             icon = R.drawable.ic_italic,
             style = RichText.Italic,
             value = value,
-            onValueChange = onValueChange
         )
 
         StyleButton(
             icon = R.drawable.ic_underlined,
             style = RichText.Underline,
             value = value,
-            onValueChange = onValueChange
         )
 
         ImagePicker(
             value = value,
-            onValueChange = onValueChange
         )
 
         VideoPicker(
             value = value,
-            onValueChange = onValueChange
         )
-
-
     }
 }
 
 @Composable
 fun TitleStyleButton(
-    value: TextEditorValue,
-    onValueChange: (TextEditorValue) -> Unit,
+    value: TextEditorValue
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     val onItemSelected = { style: RichTextAttribute ->
-        onValueChange(value.updateStyles(setOf(style)))
+        value.updateStyles(setOf(style))
         expanded = false
     }
 
@@ -208,12 +200,12 @@ fun DropDownItem(
 }
 
 @Composable
-fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit) {
+fun ImagePicker(value: TextEditorValue) {
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
-            uri?.let { onValueChange(value.addImage(it.toString())) }
+            uri?.let { value.addImage(it.toString()) }
         }
     )
 
@@ -236,12 +228,12 @@ fun ImagePicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit
 
 
 @Composable
-fun VideoPicker(value: TextEditorValue, onValueChange: (TextEditorValue) -> Unit) {
+fun VideoPicker(value: TextEditorValue) {
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
-            uri?.let { onValueChange(value.addVideo(it.toString())) }
+            uri?.let { value.addVideo(it.toString()) }
         }
     )
 
@@ -267,7 +259,6 @@ fun StyleButton(
     @DrawableRes icon: Int,
     style: RichTextAttribute,
     value: TextEditorValue,
-    onValueChange: (TextEditorValue) -> Unit,
 ) {
     IconButton(
         modifier = Modifier
@@ -281,7 +272,7 @@ fun StyleButton(
                 }, shape = RoundedCornerShape(6.dp)
             ),
         onClick = {
-            onValueChange(value.toggleStyle(style))
+            value.toggleStyle(style)
         },
     ) {
         Icon(

@@ -217,9 +217,6 @@ internal fun TextFieldComponent(
 
     RichTextField(
         value = attribute.richText,
-        onValueChange = {
-            // attribute.richText = it
-        },
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
