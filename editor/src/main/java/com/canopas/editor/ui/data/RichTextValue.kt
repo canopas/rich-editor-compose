@@ -109,7 +109,7 @@ data class RichTextValue constructor(
         updateAnnotatedString()
     }
 
-    fun updateTextFieldValue(newTextFieldValue: TextFieldValue) {
+    fun onTextFieldValueChange(newTextFieldValue: TextFieldValue) {
         if (newTextFieldValue.text.length > textFieldValue.text.length) {
             handleAddingCharacters(newTextFieldValue)
         } else if (newTextFieldValue.text.length < textFieldValue.text.length) {

@@ -143,6 +143,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
             attributes[index] = TextAttribute(value1)
             attributes.add(index + 1, newAttribute)
             add(TextAttribute(value2), index + 2)
+            focusedAttributeIndexState = attributes.lastIndex
         }
     }
 

@@ -5,6 +5,7 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -60,25 +60,21 @@ fun RichEditor(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
-    val focusManager = LocalFocusManager.current
 
     Column(modifier.verticalScroll(scrollState)) {
         state.attributes.forEachIndexed { index, value ->
             val isFocused = state.focusedAttributeIndex == index
             when (value) {
                 is TextAttribute -> {
-                    TextFieldComponent(value, isFocused, onValueChange = {
-                        state.update(it, index)
-                    }, onFocusChange = {
+                    TextFieldComponent(value, isFocused, onFocusChange = {
                         state.setFocused(index, it)
-                    }, onFocusUp = {
+                    }) {
                         state.focusUp(index)
-                    })
+                    }
                 }
 
                 is EditorAttribute.ImageAttribute -> {
                     ImageComponent(value, isFocused, onToggleSelection = { focused ->
-                        if (focused) focusManager.clearFocus(true)
                         state.setFocused(index, focused)
                     }, onRemoveClicked = {
                         state.removeContent(index)
@@ -89,7 +85,6 @@ fun RichEditor(
                     VideoComponent(
                         value, isFocused,
                         onToggleSelection = { focused ->
-                            if (focused) focusManager.clearFocus(true)
                             state.setFocused(index, focused)
                         },
                         onRemoveClicked = {
@@ -109,15 +104,27 @@ internal fun ImageComponent(
     onToggleSelection: (Boolean) -> Unit,
     onRemoveClicked: () -> Unit
 ) {
-    Box(modifier = Modifier
-        .wrapContentSize()
-        .border(
-            1.dp,
-            if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
-        )
-        .clickable {
-            onToggleSelection(!isFocused)
-        }) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(key1 = isFocused, block = {
+        if (isFocused) {
+            focusRequester.requestFocus()
+        } else {
+            focusRequester.freeFocus()
+        }
+    })
+
+    Box(
+        modifier = Modifier
+            .wrapContentSize()
+            .focusRequester(focusRequester)
+            .border(
+                1.dp,
+                if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
+            )
+            .focusable()
+            .clickable {
+                onToggleSelection(!isFocused)
+            }) {
 
         AsyncImage(
             model = attribute.value, contentDescription = null
@@ -135,6 +142,14 @@ internal fun VideoComponent(
     onRemoveClicked: () -> Unit
 ) {
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(key1 = isFocused, block = {
+        if (isFocused) {
+            focusRequester.requestFocus()
+        } else {
+            focusRequester.freeFocus()
+        }
+    })
 
     val exoPlayer = remember(attribute.value) {
         ExoPlayer.Builder(context).build().also { exoPlayer ->
@@ -157,6 +172,8 @@ internal fun VideoComponent(
     Box(
         modifier = Modifier
             .wrapContentSize()
+            .focusRequester(focusRequester)
+            .focusable()
             .border(
                 1.dp,
                 if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -200,7 +217,6 @@ internal fun VideoComponent(
 internal fun TextFieldComponent(
     attribute: TextAttribute,
     isFocused: Boolean,
-    onValueChange: (TextAttribute) -> Unit,
     onFocusChange: (Boolean) -> Unit,
     onFocusUp: () -> Unit
 ) {

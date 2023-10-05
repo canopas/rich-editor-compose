@@ -34,7 +34,7 @@ internal fun RichTextField(
     BasicTextField(
         value = value.textFieldValue,
         onValueChange = {
-            value.updateTextFieldValue(it)
+            value.onTextFieldValueChange(it)
         },
         modifier = modifier,
         enabled = enabled,
