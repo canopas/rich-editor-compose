@@ -18,7 +18,7 @@ import kotlin.math.min
 
 class RichTextState internal constructor(
     val richText: String = "",
-    val parts: MutableList<RichTextPart> = mutableListOf()
+    val spans: MutableList<RichTextPart> = mutableListOf()
 ) {
 
     internal var textFieldValue by mutableStateOf(TextFieldValue(richText))
@@ -66,7 +66,7 @@ class RichTextState internal constructor(
     private fun updateAnnotatedString(newValue: TextFieldValue = textFieldValue) {
         annotatedString = buildAnnotatedString {
             append(newValue.text)
-            parts.forEach { part ->
+            spans.forEach { part ->
                 addStyle(
                     style = part.spanStyle,
                     start = part.fromIndex,
@@ -96,7 +96,7 @@ class RichTextState internal constructor(
     }
 
     private fun getRichSpanByTextIndex(textIndex: Int): SpanStyle {
-        val matchingParts = parts.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
+        val matchingParts = spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
         return matchingParts.fold(DefaultSpanStyle) { accumulatedSpanStyle, part ->
             accumulatedSpanStyle + part.spanStyle
         }
@@ -105,7 +105,7 @@ class RichTextState internal constructor(
     private fun getRichSpanListByTextRange(selection: TextRange): List<SpanStyle> {
         val matchingSpans = mutableListOf<SpanStyle>()
 
-        for (part in parts) {
+        for (part in spans) {
             val partRange = TextRange(part.fromIndex, part.toIndex)
             if (selection.overlaps(partRange)) {
                 matchingSpans.add(part.spanStyle)
@@ -192,51 +192,51 @@ class RichTextState internal constructor(
 
         val currentStyles = currentSpanStyle
 
-        val startRichTextPartIndex = parts.indexOfFirst {
+        val startRichTextPartIndex = spans.indexOfFirst {
             (startTypeIndex - 1) in it.fromIndex..it.toIndex
         }
-        val endRichTextPartIndex = parts.indexOfFirst {
+        val endRichTextPartIndex = spans.indexOfFirst {
             startTypeIndex in it.fromIndex..it.toIndex
         }
 
-        val startRichTextPart = parts.getOrNull(startRichTextPartIndex)
-        val endRichTextPart = parts.getOrNull(endRichTextPartIndex)
+        val startRichTextPart = spans.getOrNull(startRichTextPartIndex)
+        val endRichTextPart = spans.getOrNull(endRichTextPartIndex)
 
         if (currentStyles == startRichTextPart?.spanStyle) {
-            parts[startRichTextPartIndex] = startRichTextPart.copy(
+            spans[startRichTextPartIndex] = startRichTextPart.copy(
                 toIndex = startRichTextPart.toIndex + typedChars
             )
 
-            if (startRichTextPartIndex < parts.lastIndex) {
+            if (startRichTextPartIndex < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 1,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
         } else if (currentStyles == endRichTextPart?.spanStyle) {
-            parts[endRichTextPartIndex] = endRichTextPart.copy(
+            spans[endRichTextPartIndex] = endRichTextPart.copy(
                 toIndex = endRichTextPart.toIndex + typedChars
             )
 
-            if (endRichTextPartIndex < parts.lastIndex) {
+            if (endRichTextPartIndex < spans.lastIndex) {
                 forwardParts(
                     fromIndex = endRichTextPartIndex + 1,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
         } else if (startRichTextPart == endRichTextPart && startRichTextPart != null) {
-            parts[startRichTextPartIndex] = startRichTextPart.copy(
+            spans[startRichTextPartIndex] = startRichTextPart.copy(
                 toIndex = startTypeIndex - 1
             )
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, startRichTextPart.copy(
                     fromIndex = startTypeIndex + typedChars,
                     toIndex = startRichTextPart.toIndex + typedChars
                 )
             )
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
@@ -244,15 +244,15 @@ class RichTextState internal constructor(
                 )
             )
 
-            if ((startRichTextPartIndex + 2) < parts.lastIndex) {
+            if ((startRichTextPartIndex + 2) < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 3,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
         } else if (endRichTextPart == null) {
-            parts.add(
+            spans.add(
                 RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
@@ -260,7 +260,7 @@ class RichTextState internal constructor(
                 )
             )
         } else {
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
@@ -268,10 +268,10 @@ class RichTextState internal constructor(
                 )
             )
 
-            if ((startRichTextPartIndex + 1) < parts.lastIndex) {
+            if ((startRichTextPartIndex + 1) < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 2,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
@@ -284,11 +284,11 @@ class RichTextState internal constructor(
         by: Int
     ) {
         val start = max(fromIndex, 0)
-        val end = min(toIndex, parts.lastIndex)
+        val end = min(toIndex, spans.lastIndex)
         (start..end).forEach { index ->
-            parts[index] = parts[index].copy(
-                fromIndex = parts[index].fromIndex + by,
-                toIndex = parts[index].toIndex + by,
+            spans[index] = spans[index].copy(
+                fromIndex = spans[index].fromIndex + by,
+                toIndex = spans[index].toIndex + by,
             )
         }
     }
@@ -301,9 +301,9 @@ class RichTextState internal constructor(
         val endRemoveIndex = newTextFieldValue.selection.min
         val removeRange = endRemoveIndex until startRemoveIndex
 
-        val iterator = parts.iterator()
+        val iterator = spans.iterator()
 
-        val partsCopy = parts.toMutableList()
+        val partsCopy = spans.toMutableList()
 
         while (iterator.hasNext()) {
             val part = iterator.next()
@@ -329,8 +329,8 @@ class RichTextState internal constructor(
             }
         }
 
-        parts.clear()
-        parts.addAll(partsCopy)
+        spans.clear()
+        spans.addAll(partsCopy)
     }
 
     private fun updateSelectedTextParts(
@@ -343,17 +343,17 @@ class RichTextState internal constructor(
         val fromIndex = textFieldValue.selection.min
         val toIndex = textFieldValue.selection.max
 
-        val selectedParts = parts.filter { part ->
+        val selectedParts = spans.filter { part ->
             part.fromIndex < toIndex && part.toIndex >= fromIndex
         }
 
         selectedParts.forEach { part ->
-            val index = parts.indexOf(part)
-            if (index !in parts.indices) return@forEach
+            val index = spans.indexOf(part)
+            if (index !in spans.indices) return@forEach
 
             if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
-                parts[index] = part.copy(toIndex = fromIndex - 1)
-                parts.add(
+                spans[index] = part.copy(toIndex = fromIndex - 1)
+                spans.add(
                     index + 1,
                     update(
                         part.copy(
@@ -362,17 +362,17 @@ class RichTextState internal constructor(
                         )
                     )
                 )
-                parts.add(index + 2, part.copy(fromIndex = toIndex))
+                spans.add(index + 2, part.copy(fromIndex = toIndex))
             } else if (part.fromIndex < fromIndex) {
-                parts[index] = part.copy(
+                spans[index] = part.copy(
                     toIndex = fromIndex - 1
                 )
-                parts.add(index + 1, update(part.copy(fromIndex = fromIndex)))
+                spans.add(index + 1, update(part.copy(fromIndex = fromIndex)))
             } else if (part.toIndex >= toIndex) {
-                parts[index] = update(part.copy(toIndex = toIndex - 1))
-                parts.add(index + 1, part.copy(fromIndex = toIndex))
+                spans[index] = update(part.copy(toIndex = toIndex - 1))
+                spans.add(index + 1, part.copy(fromIndex = toIndex))
             } else {
-                parts[index] = update(part)
+                spans[index] = update(part)
             }
         }
     }
@@ -385,7 +385,7 @@ class RichTextState internal constructor(
         val endRangeMap = mutableMapOf<Int, Int>()
         val removedIndexes = mutableSetOf<Int>()
 
-        val partsCopy = parts.toMutableList() // Create a copy of the original parts
+        val partsCopy = spans.toMutableList() // Create a copy of the original parts
 
         partsCopy.forEachIndexed { index, part ->
             startRangeMap[part.fromIndex] = index
@@ -442,15 +442,15 @@ class RichTextState internal constructor(
         removedIndexes.reversed().forEach { partsCopy.removeAt(it) }
 
         // Replace the original parts with the modified copy
-        parts.clear()
-        parts.addAll(partsCopy)
+        spans.clear()
+        spans.addAll(partsCopy)
     }
 
     internal fun merge(nextItem: RichTextState) {
         val text = this.text + "\n" + nextItem.text
-        val existingParts = ArrayList(this.parts)
-        this.parts.addAll(nextItem.parts)
-        forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
+        val existingParts = ArrayList(this.spans)
+        this.spans.addAll(nextItem.spans)
+        forwardParts(existingParts.size, this.spans.size, this.text.length + 1)
         val newTextField = TextFieldValue(text, selection = TextRange(text.length))
         updateTextFieldValue(newTextField)
     }

@@ -146,6 +146,7 @@ fun StyleContainer(
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
+                Log.d("XXX", "Json ${state.toJson()} ")
 
             },
         ) {

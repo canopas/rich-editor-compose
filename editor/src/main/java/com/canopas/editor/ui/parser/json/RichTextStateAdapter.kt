@@ -30,8 +30,8 @@ class RichTextStateAdapter : JsonSerializer<RichTextState>, JsonDeserializer<Ric
         context: JsonSerializationContext?
     ): JsonElement {
         val jsonObject = JsonObject()
-        jsonObject.addProperty("richText", src?.text)
-        jsonObject.add("parts", context?.serialize(src?.parts))
+        jsonObject.addProperty("text", src?.text)
+        jsonObject.add("spans", context?.serialize(src?.spans))
         return jsonObject
     }
 
@@ -41,9 +41,9 @@ class RichTextStateAdapter : JsonSerializer<RichTextState>, JsonDeserializer<Ric
         context: JsonDeserializationContext?
     ): RichTextState {
         val jsonObject = json?.asJsonObject ?: throw JsonParseException("Invalid JSON")
-        val text = jsonObject.get("richText").asString
+        val text = jsonObject.get("text").asString
         val parts = context?.deserialize<MutableList<RichTextPart>>(
-            jsonObject.get("parts"),
+            jsonObject.get("spans"),
             object : TypeToken<MutableList<RichTextPart>>() {}.type
         )
         return RichTextState(text, parts ?: mutableListOf())
@@ -57,9 +57,9 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         context: JsonSerializationContext?
     ): JsonElement {
         val jsonObject = JsonObject()
-        jsonObject.addProperty("fromIndex", src?.fromIndex)
-        jsonObject.addProperty("toIndex", src?.toIndex)
-        jsonObject.addProperty("spanStyle", src?.spanStyle?.toSpansString() ?: "")
+        jsonObject.addProperty("from", src?.fromIndex)
+        jsonObject.addProperty("to", src?.toIndex)
+        jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "")
         return jsonObject
     }
 
@@ -69,9 +69,9 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         context: JsonDeserializationContext?
     ): RichTextPart {
         val jsonObject = json?.asJsonObject ?: throw JsonParseException("Invalid JSON")
-        val fromIndex = jsonObject.get("fromIndex").asInt
-        val toIndex = jsonObject.get("toIndex").asInt
-        val spansString = jsonObject.get("spanStyle").asString
+        val fromIndex = jsonObject.get("from").asInt
+        val toIndex = jsonObject.get("to").asInt
+        val spansString = jsonObject.get("style").asString
         val spanStyle = spansString.toSpanStyle()
         return RichTextPart(fromIndex, toIndex, spanStyle)
     }

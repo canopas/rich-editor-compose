@@ -240,7 +240,7 @@ internal fun TextFieldComponent(
     })
 
     RichTextField(
-        value = attribute.richText,
+        value = attribute.content,
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)

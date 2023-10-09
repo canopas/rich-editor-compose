@@ -77,7 +77,7 @@ class RichEditorState internal constructor(
     fun hasStyle(style: SpanStyle): Boolean {
         return attributes.filterIndexed { index, value ->
             focusedAttributeIndex == index && value.type == "text"
-        }.any { (it as TextAttribute).richText.hasStyle(style) }
+        }.any { (it as TextAttribute).content.hasStyle(style) }
     }
 
     private fun getRichTexts(): List<TextAttribute> =
@@ -86,7 +86,7 @@ class RichEditorState internal constructor(
     fun toggleStyle(style: SpanStyle): RichEditorState {
         attributes.forEach { value ->
             if (value.type == "text") {
-                ((value as TextAttribute)).richText.toggleStyle(style)
+                ((value as TextAttribute)).content.toggleStyle(style)
             }
         }
 
@@ -137,7 +137,7 @@ class RichEditorState internal constructor(
         val index = attributes.indexOf(textAttribute)
         if (cursorPosition >= 0) {
             clearFocus()
-            val (value1, value2) = textAttribute.richText.split(cursorPosition)
+            val (value1, value2) = textAttribute.content.split(cursorPosition)
             attributes[index] = TextAttribute(value1)
             attributes.add(index + 1, newAttribute)
             add(TextAttribute(value2), index + 2)
@@ -175,7 +175,7 @@ class RichEditorState internal constructor(
         remove(index)
         if (previousItem.type == "text" && nextItem.type == "text") {
             if (!(nextItem as TextAttribute).isEmpty) {
-                (previousItem as TextAttribute).richText.merge(nextItem.richText)
+                (previousItem as TextAttribute).content.merge(nextItem.content)
             } else {
                 focusedAttributeIndexState = index - 1
                 update(previousItem, index - 1)

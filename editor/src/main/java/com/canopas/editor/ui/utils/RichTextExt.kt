@@ -9,20 +9,20 @@ import com.canopas.editor.ui.data.RichTextState
 fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState> {
     if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
 
-    val copyParts = ArrayList(parts)
+    val copyParts = ArrayList(spans)
     val subtext1 = text.substring(0, cursorPosition)
     val subtext2 = text.substring(cursorPosition)
-    val textParts1 = removeParts(parts, cursorPosition).toMutableList()
+    val textParts1 = removeParts(spans, cursorPosition).toMutableList()
 
-    this.parts.clear()
-    this.parts.addAll(textParts1)
+    this.spans.clear()
+    this.spans.addAll(textParts1)
     val textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
     this.updateTextFieldValue(textFieldValue)
 
 
     val newList = forwardParts(copyParts, cursorPosition).toMutableList()
     val textValue2 =
-        RichTextState(richText = subtext2, parts = newList)
+        RichTextState(richText = subtext2, spans = newList)
     return Pair(this, textValue2)
 }
 

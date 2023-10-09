@@ -14,11 +14,11 @@ sealed interface EditorAttribute {
     ) : EditorAttribute
 
     data class TextAttribute(
-        val richText: RichTextState = RichTextState(), override val type: String = "text",
+        val content: RichTextState = RichTextState(), override val type: String = "text",
     ) : EditorAttribute {
 
-        val isEmpty get() = richText.text.isEmpty()
+        val isEmpty get() = content.text.isEmpty()
 
-        val selection get() = richText.textFieldValue.selection
+        val selection get() = content.textFieldValue.selection
     }
 }
