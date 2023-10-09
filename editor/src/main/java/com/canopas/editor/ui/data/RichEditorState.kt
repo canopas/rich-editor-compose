@@ -93,6 +93,16 @@ class RichEditorState internal constructor(
         return this
     }
 
+    fun updateStyle(style: SpanStyle): RichEditorState {
+        attributes.forEach { value ->
+            if (value.type == "text") {
+                ((value as TextAttribute)).content.updateStyle(style)
+            }
+        }
+
+        return this
+    }
+
     private fun clearFocus() {
         focusedAttributeIndexState = -1
     }

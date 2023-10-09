@@ -1,6 +1,5 @@
 package com.canopas.editor.ui.data
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,8 +86,6 @@ class RichTextState internal constructor(
             getRichSpanListByTextRange(selection).distinct()
         }
 
-        Log.d("XXX", "currentStyles $currentStyles")
-
         this.currentStyles.addAll(currentStyles)
     }
 
@@ -119,6 +116,15 @@ class RichTextState internal constructor(
             removeStyle(style)
         } else {
             addStyle(style)
+        }
+    }
+
+    fun updateStyle(style: SpanStyle) {
+        currentStyles.clear()
+        currentStyles.add(style)
+
+        if (!selection.collapsed) {
+            applyStylesToSelectedText(style)
         }
     }
 
@@ -162,7 +168,6 @@ class RichTextState internal constructor(
             handleAddingCharacters(newTextFieldValue)
         else if (newTextFieldValue.text.length < textFieldValue.text.length)
             handleRemovingCharacters(newTextFieldValue)
-
         else if (
             newTextFieldValue.text == textFieldValue.text &&
             newTextFieldValue.selection != textFieldValue.selection
