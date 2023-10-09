@@ -1,8 +1,11 @@
 package com.canopas.editor.ui.data
 
+import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -11,8 +14,6 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import com.canopas.editor.ui.utils.contains
-import com.canopas.editor.ui.utils.remove
 import kotlin.math.max
 import kotlin.math.min
 
@@ -24,15 +25,7 @@ class RichTextState internal constructor(
     internal var textFieldValue by mutableStateOf(TextFieldValue(richText))
         private set
 
-
-    private var toAddSpanStyle: SpanStyle by mutableStateOf(SpanStyle())
-    private var toRemoveSpanStyle: SpanStyle by mutableStateOf(SpanStyle())
-
-    private val currentSpanStyle: SpanStyle
-        get() = currentAppliedSpanStyle.merge(toAddSpanStyle).remove(toRemoveSpanStyle)
-
-    private var currentAppliedSpanStyle: SpanStyle by mutableStateOf(DefaultSpanStyle)
-
+    private val currentStyles = mutableStateListOf<SpanStyle>()
 
     internal var visualTransformation: VisualTransformation by mutableStateOf(VisualTransformation.None)
 
@@ -58,8 +51,6 @@ class RichTextState internal constructor(
             updateAnnotatedString(newValue)
         }
 
-        toAddSpanStyle = SpanStyle()
-        toRemoveSpanStyle = SpanStyle()
         updateCurrentSpanStyle()
     }
 
@@ -68,7 +59,11 @@ class RichTextState internal constructor(
             append(newValue.text)
             spans.forEach { part ->
                 addStyle(
-                    style = part.spanStyle,
+                    style = part.spanStyle.fold(SpanStyle()) { spanstyle, newStyle ->
+                        spanstyle.merge(
+                            newStyle
+                        )
+                    },
                     start = part.fromIndex,
                     end = part.toIndex + 1,
                 )
@@ -84,22 +79,22 @@ class RichTextState internal constructor(
     }
 
     private fun updateCurrentSpanStyle() {
-        currentAppliedSpanStyle = if (selection.collapsed) {
+        this.currentStyles.clear()
+
+        val currentStyles = if (selection.collapsed) {
             getRichSpanByTextIndex(textIndex = selection.min - 1)
         } else {
             getRichSpanListByTextRange(selection).distinct()
-                .fold(SpanStyle()) { default: SpanStyle, spanStyle: SpanStyle ->
-                    default + spanStyle
-                }
-
         }
+
+        Log.d("XXX", "currentStyles $currentStyles")
+
+        this.currentStyles.addAll(currentStyles)
     }
 
-    private fun getRichSpanByTextIndex(textIndex: Int): SpanStyle {
-        val matchingParts = spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
-        return matchingParts.fold(DefaultSpanStyle) { accumulatedSpanStyle, part ->
-            accumulatedSpanStyle + part.spanStyle
-        }
+    private fun getRichSpanByTextIndex(textIndex: Int): List<SpanStyle> {
+        return spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
+            .flatMap { it.spanStyle }
     }
 
     private fun getRichSpanListByTextRange(selection: TextRange): List<SpanStyle> {
@@ -108,19 +103,19 @@ class RichTextState internal constructor(
         for (part in spans) {
             val partRange = TextRange(part.fromIndex, part.toIndex)
             if (selection.overlaps(partRange)) {
-                matchingSpans.add(part.spanStyle)
+                matchingSpans.addAll(part.spanStyle)
             }
         }
 
         return matchingSpans
     }
 
-    fun TextRange.overlaps(range: TextRange): Boolean {
+    private fun TextRange.overlaps(range: TextRange): Boolean {
         return end > range.start && start < range.end
     }
 
     fun toggleStyle(style: SpanStyle) {
-        if (currentSpanStyle.contains(style)) {
+        if (currentStyles.contains(style)) {
             removeStyle(style)
         } else {
             addStyle(style)
@@ -128,9 +123,8 @@ class RichTextState internal constructor(
     }
 
     private fun addStyle(style: SpanStyle) {
-        if (!currentSpanStyle.contains(style)) {
-            toAddSpanStyle = toAddSpanStyle.merge(style)
-            toRemoveSpanStyle = toRemoveSpanStyle.remove(style)
+        if (!currentStyles.contains(style)) {
+            currentStyles.add(style)
         }
 
         if (!selection.collapsed) {
@@ -140,15 +134,15 @@ class RichTextState internal constructor(
 
     private fun applyStylesToSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.copy(spanStyle = part.spanStyle.merge(style))
+            part.spanStyle.add(style)
+            part
         }
         updateTextFieldValue()
     }
 
     private fun removeStyle(style: SpanStyle) {
-        if (currentSpanStyle.contains(style)) {
-            toRemoveSpanStyle = toRemoveSpanStyle.merge(style)
-            toAddSpanStyle = toAddSpanStyle.remove(style)
+        if (currentStyles.contains(style)) {
+            currentStyles.remove(style)
         }
 
         if (!selection.collapsed)
@@ -157,17 +151,18 @@ class RichTextState internal constructor(
 
     private fun removeStylesFromSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.copy(spanStyle = part.spanStyle.remove(style))
+            part.spanStyle.remove(style)
+            part
         }
         updateTextFieldValue()
     }
 
     fun onTextFieldValueChange(newTextFieldValue: TextFieldValue) {
-        // Log.d("XXX", "onTextFieldValueChange")
         if (newTextFieldValue.text.length > textFieldValue.text.length)
             handleAddingCharacters(newTextFieldValue)
         else if (newTextFieldValue.text.length < textFieldValue.text.length)
             handleRemovingCharacters(newTextFieldValue)
+
         else if (
             newTextFieldValue.text == textFieldValue.text &&
             newTextFieldValue.selection != textFieldValue.selection
@@ -190,7 +185,7 @@ class RichTextState internal constructor(
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
-        val currentStyles = currentSpanStyle
+        val currentStyles = this.currentStyles.toMutableStateList()
 
         val startRichTextPartIndex = spans.indexOfFirst {
             (startTypeIndex - 1) in it.fromIndex..it.toIndex
@@ -455,7 +450,7 @@ class RichTextState internal constructor(
         updateTextFieldValue(newTextField)
     }
 
-    fun hasStyle(style: SpanStyle) = currentSpanStyle.contains(style)
+    fun hasStyle(style: SpanStyle) = currentStyles.contains(style)
 
     companion object {
         internal val DefaultSpanStyle = SpanStyle()

@@ -317,6 +317,8 @@ fun StyleButton(
     style: SpanStyle,
     value: RichEditorState,
 ) {
+    Log.d("XXX", " style $style has style ${value.hasStyle(style)}")
+
     IconButton(
         modifier = Modifier
             .padding(2.dp)
