@@ -1,4 +1,4 @@
-package com.canopas.editor.ui
+package com.canopas.editor.ui.ui
 
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -36,6 +36,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -52,12 +53,13 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.canopas.editor.ui.data.EditorAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
-import com.canopas.editor.ui.data.TextEditorValue
+import com.canopas.editor.ui.data.RichEditorState
 
 @Composable
 fun RichEditor(
-    state: TextEditorValue,
+    state: RichEditorState,
     modifier: Modifier = Modifier,
+    embeddedErrorPlaceHolder: Painter? = null,
 ) {
     val scrollState = rememberScrollState()
 
@@ -74,11 +76,12 @@ fun RichEditor(
                 }
 
                 is EditorAttribute.ImageAttribute -> {
-                    ImageComponent(value, isFocused, onToggleSelection = { focused ->
-                        state.setFocused(index, focused)
-                    }, onRemoveClicked = {
-                        state.removeContent(index)
-                    })
+                    ImageComponent(value, isFocused, embeddedErrorPlaceHolder,
+                        onToggleSelection = { focused ->
+                            state.setFocused(index, focused)
+                        }, onRemoveClicked = {
+                            state.removeContent(index)
+                        })
                 }
 
                 is EditorAttribute.VideoAttribute -> {
@@ -101,6 +104,7 @@ fun RichEditor(
 internal fun ImageComponent(
     attribute: EditorAttribute.ImageAttribute,
     isFocused: Boolean,
+    embeddedErrorPlaceHolder: Painter? = null,
     onToggleSelection: (Boolean) -> Unit,
     onRemoveClicked: () -> Unit
 ) {
@@ -124,10 +128,14 @@ internal fun ImageComponent(
             .focusable()
             .clickable {
                 onToggleSelection(!isFocused)
-            }) {
-
+            }
+            .background(Color.LightGray)
+    ) {
         AsyncImage(
-            model = attribute.value, contentDescription = null
+            model = attribute.url,
+            contentDescription = null,
+            modifier = Modifier,
+            error = embeddedErrorPlaceHolder
         )
 
         ContentDeleteButton(isFocused, onRemoveClicked)
@@ -151,9 +159,9 @@ internal fun VideoComponent(
         }
     })
 
-    val exoPlayer = remember(attribute.value) {
+    val exoPlayer = remember(attribute.url) {
         ExoPlayer.Builder(context).build().also { exoPlayer ->
-            val mediaItem = MediaItem.fromUri(attribute.value)
+            val mediaItem = MediaItem.fromUri(attribute.url)
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
             exoPlayer.prepare()
@@ -205,7 +213,7 @@ internal fun VideoComponent(
         ContentDeleteButton(isFocused, onRemoveClicked)
     }
 
-    DisposableEffect(key1 = attribute.value, effect = {
+    DisposableEffect(key1 = attribute.url, effect = {
         onDispose {
             exoPlayer.release()
         }
@@ -278,7 +286,7 @@ private fun BoxScope.ContentDeleteButton(focused: Boolean, onRemoveClicked: () -
 }
 
 @Composable
-fun rememberEditorState(): TextEditorValue {
+fun rememberEditorState(): RichEditorState {
     val attribute = remember { mutableStateListOf<EditorAttribute>() }
-    return remember { TextEditorValue(attribute) }
+    return remember { RichEditorState(attribute) }
 }

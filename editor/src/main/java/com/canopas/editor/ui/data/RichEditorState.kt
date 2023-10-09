@@ -4,14 +4,20 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.SpanStyle
 import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
-import com.canopas.editor.ui.split
+import com.canopas.editor.ui.parser.json.JsonEditorParser
+import com.canopas.editor.ui.utils.split
 
 @Immutable
-class TextEditorValue internal constructor(val attributes: MutableList<EditorAttribute> = mutableListOf()) {
+class RichEditorState internal constructor(
+    val attributes: MutableList<EditorAttribute> = mutableListOf()
+) {
 
+
+    @delegate:Transient
     private var focusedAttributeIndexState by mutableStateOf(-1)
 
 
@@ -68,31 +74,23 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         else if (focusedAttributeIndex == index) focusedAttributeIndexState = -1
     }
 
-    fun hasStyle(style: RichTextAttribute): Boolean {
+    fun hasStyle(style: SpanStyle): Boolean {
         return attributes.filterIndexed { index, value ->
-            focusedAttributeIndex == index && value.scope == AttributeScope.TEXTS
+            focusedAttributeIndex == index && value.type == "text"
         }.any { (it as TextAttribute).richText.hasStyle(style) }
     }
 
     private fun getRichTexts(): List<TextAttribute> =
-        attributes.filter { it.scope == AttributeScope.TEXTS }.map { it as TextAttribute }
+        attributes.filter { it.type == "text" }.map { it as TextAttribute }
 
-    fun toggleStyle(style: RichTextAttribute): TextEditorValue {
+    fun toggleStyle(style: SpanStyle): RichEditorState {
         attributes.forEach { value ->
-            if (value.scope == AttributeScope.TEXTS) {
+            if (value.type == "text") {
                 ((value as TextAttribute)).richText.toggleStyle(style)
             }
         }
 
         return this
-    }
-
-    fun updateStyles(styles: Set<RichTextAttribute>) {
-        attributes.forEachIndexed { index, value ->
-            if (value.scope == AttributeScope.TEXTS) {
-                ((value as TextAttribute)).richText.updateStyles(styles)
-            }
-        }
     }
 
     private fun clearFocus() {
@@ -112,7 +110,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         }
 
         val value = attributes.last()
-        if (value.scope == AttributeScope.TEXTS && (value as TextAttribute).isEmpty) {
+        if (value.type == "text" && (value as TextAttribute).isEmpty) {
             add(attribute, attributes.lastIndex)
             return
         }
@@ -123,12 +121,12 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         add(TextAttribute())
     }
 
-    fun addImage(path: String) {
-        addContent(ImageAttribute(path))
+    fun addImage(url: String) {
+        addContent(ImageAttribute(url))
     }
 
-    fun addVideo(path: String) {
-        addContent(VideoAttribute(path))
+    fun addVideo(url: String) {
+        addContent(VideoAttribute(url))
     }
 
     private fun splitAndAdd(
@@ -160,7 +158,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         }
         if (upIndex != -1 && upIndex < attributes.size) {
             val item = attributes[upIndex]
-            if (item.scope == AttributeScope.EMBEDS && upIndex == focusedAttributeIndex) {
+            if (item.type != "text" && upIndex == focusedAttributeIndex) {
                 handleRemoveAndMerge(upIndex)
                 return
             } else {
@@ -175,7 +173,7 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
         val nextItem = attributes.elementAtOrNull(index + 1) ?: return
         clearFocus()
         remove(index)
-        if (previousItem.scope == AttributeScope.TEXTS && nextItem.scope == AttributeScope.TEXTS) {
+        if (previousItem.type == "text" && nextItem.type == "text") {
             if (!(nextItem as TextAttribute).isEmpty) {
                 (previousItem as TextAttribute).richText.merge(nextItem.richText)
             } else {
@@ -187,4 +185,21 @@ class TextEditorValue internal constructor(val attributes: MutableList<EditorAtt
             remove(nextItem)
         }
     }
+
+
+    fun setJson(json: String) {
+        if (json.isEmpty()) {
+            clearFocus()
+            setContent(emptyList())
+            return
+        }
+        val state = JsonEditorParser.encode(json)
+        setContent(state.attributes)
+        setFocused(state.attributes.lastIndex, true)
+    }
+
+    fun toJson(): String {
+        return JsonEditorParser.decode(this)
+    }
+
 }

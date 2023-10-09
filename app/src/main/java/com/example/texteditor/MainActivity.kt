@@ -1,6 +1,7 @@
 package com.example.texteditor
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,18 +34,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.canopas.editor.ui.RichEditor
-import com.canopas.editor.ui.data.RichText
-import com.canopas.editor.ui.data.RichTextAttribute
-import com.canopas.editor.ui.data.TextEditorValue
-import com.canopas.editor.ui.rememberEditorState
+import com.canopas.editor.ui.data.RichEditorState
+import com.canopas.editor.ui.ui.RichEditor
+import com.canopas.editor.ui.ui.rememberEditorState
+import com.canopas.editor.ui.utils.BoldSpanStyle
+import com.canopas.editor.ui.utils.DefaultSpanStyle
+import com.canopas.editor.ui.utils.H1SPanStyle
+import com.canopas.editor.ui.utils.H2SPanStyle
+import com.canopas.editor.ui.utils.H3SPanStyle
+import com.canopas.editor.ui.utils.H4SPanStyle
+import com.canopas.editor.ui.utils.H5SPanStyle
+import com.canopas.editor.ui.utils.H6SPanStyle
+import com.canopas.editor.ui.utils.ItalicSpanStyle
+import com.canopas.editor.ui.utils.UnderlineSpanStyle
 import com.example.texteditor.ui.theme.TextEditorTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,7 +93,8 @@ fun Sample() {
                     .fillMaxWidth()
                     .weight(1f)
                     .border(1.dp, Color.Gray)
-                    .padding(5.dp)
+                    .padding(5.dp),
+                embeddedErrorPlaceHolder = painterResource(id = com.canopas.editor.R.drawable.ic_error_placeholder)
             )
         }
     }
@@ -86,8 +103,9 @@ fun Sample() {
 
 @Composable
 fun StyleContainer(
-    value: TextEditorValue,
+    state: RichEditorState,
 ) {
+    val scope = rememberCoroutineScope()
     Row(
         Modifier
             .fillMaxWidth()
@@ -96,44 +114,81 @@ fun StyleContainer(
         horizontalArrangement = Arrangement.Start,
     ) {
 
-        TitleStyleButton(value)
+        TitleStyleButton(state)
         StyleButton(
             icon = R.drawable.ic_bold,
-            style = RichText.Bold,
-            value = value,
-
-            )
+            style = BoldSpanStyle,
+            value = state
+        )
 
         StyleButton(
             icon = R.drawable.ic_italic,
-            style = RichText.Italic,
-            value = value,
+            style = ItalicSpanStyle,
+            value = state,
         )
 
         StyleButton(
             icon = R.drawable.ic_underlined,
-            style = RichText.Underline,
-            value = value,
+            style = UnderlineSpanStyle,
+            value = state,
         )
 
         ImagePicker(
-            value = value,
+            value = state,
         )
 
         VideoPicker(
-            value = value,
+            value = state,
         )
+
+        IconButton(
+            modifier = Modifier
+                .padding(2.dp)
+                .size(48.dp),
+            onClick = {
+
+            },
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_save), contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        IconButton(
+            modifier = Modifier
+                .padding(2.dp)
+                .size(48.dp),
+            onClick = {
+                var json = state.toJson()
+                state.setJson("")
+                scope.launch {
+                    delay(5000)
+                    withContext(Dispatchers.Main) {
+                        Log.d("XXX", "Json ${json} ")
+                        state.setJson(json)
+                    }
+                }
+
+            },
+        ) {
+            Icon(
+                Icons.Default.Add, contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
     }
 }
 
 @Composable
 fun TitleStyleButton(
-    value: TextEditorValue
+    value: RichEditorState
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val onItemSelected = { style: RichTextAttribute ->
-        value.updateStyles(setOf(style))
+    val onItemSelected = { style: SpanStyle ->
+        value.toggleStyle(style)
         expanded = false
     }
 
@@ -160,20 +215,20 @@ fun TitleStyleButton(
         ) {
 
             DropDownItem(text = "Text",
-                isSelected = value.hasStyle(RichText.NormalText),
-                onItemSelected = { onItemSelected(RichTextAttribute.NormalText) })
-            DropDownItem(text = "Title", isSelected = value.hasStyle(RichText.Title),
-                onItemSelected = { onItemSelected(RichText.Title) })
-            DropDownItem(text = "Subtitle", isSelected = value.hasStyle(RichText.SubTitle),
-                onItemSelected = { onItemSelected(RichText.SubTitle) })
-            DropDownItem(text = "Header 1", isSelected = value.hasStyle(RichText.H1),
-                onItemSelected = { onItemSelected(RichText.H1) })
-            DropDownItem(text = "Header 2", isSelected = value.hasStyle(RichText.H2),
-                onItemSelected = { onItemSelected(RichText.H2) })
-            DropDownItem(text = "Header 3", isSelected = value.hasStyle(RichText.H3),
-                onItemSelected = { onItemSelected(RichText.H3) })
-            DropDownItem(text = "Header 4", isSelected = value.hasStyle(RichText.H4),
-                onItemSelected = { onItemSelected(RichText.H4) })
+                isSelected = value.hasStyle(DefaultSpanStyle),
+                onItemSelected = { onItemSelected(DefaultSpanStyle) })
+            DropDownItem(text = "Header 1", isSelected = value.hasStyle(H1SPanStyle),
+                onItemSelected = { onItemSelected(H1SPanStyle) })
+            DropDownItem(text = "Header 2", isSelected = value.hasStyle(H2SPanStyle),
+                onItemSelected = { onItemSelected(H2SPanStyle) })
+            DropDownItem(text = "Header 3", isSelected = value.hasStyle(H3SPanStyle),
+                onItemSelected = { onItemSelected(H3SPanStyle) })
+            DropDownItem(text = "Header 4", isSelected = value.hasStyle(H4SPanStyle),
+                onItemSelected = { onItemSelected(H4SPanStyle) })
+            DropDownItem(text = "Header 5", isSelected = value.hasStyle(H5SPanStyle),
+                onItemSelected = { onItemSelected(H5SPanStyle) })
+            DropDownItem(text = "Header 6", isSelected = value.hasStyle(H6SPanStyle),
+                onItemSelected = { onItemSelected(H6SPanStyle) })
         }
     }
 }
@@ -200,11 +255,12 @@ fun DropDownItem(
 }
 
 @Composable
-fun ImagePicker(value: TextEditorValue) {
+fun ImagePicker(value: RichEditorState) {
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
+            // Upload image and add Url
             uri?.let { value.addImage(it.toString()) }
         }
     )
@@ -228,7 +284,7 @@ fun ImagePicker(value: TextEditorValue) {
 
 
 @Composable
-fun VideoPicker(value: TextEditorValue) {
+fun VideoPicker(value: RichEditorState) {
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -257,8 +313,8 @@ fun VideoPicker(value: TextEditorValue) {
 @Composable
 fun StyleButton(
     @DrawableRes icon: Int,
-    style: RichTextAttribute,
-    value: TextEditorValue,
+    style: SpanStyle,
+    value: RichEditorState,
 ) {
     IconButton(
         modifier = Modifier
