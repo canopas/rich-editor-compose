@@ -1,4 +1,4 @@
-package com.canopas.editor.ui
+package com.canopas.editor.ui.ui
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.BasicTextField
@@ -12,11 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import com.canopas.editor.ui.data.RichTextValue
+import com.canopas.editor.ui.data.RichTextState
 
 @Composable
 internal fun RichTextField(
-    value: RichTextValue,
+    value: RichTextState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,

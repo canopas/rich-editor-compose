@@ -1,37 +1,24 @@
 package com.canopas.editor.ui.data
 
-enum class AttributeScope {
-    EMBEDS, TEXTS
-}
 
 sealed interface EditorAttribute {
-    val key: String?
-    val scope: AttributeScope?
+    val type: String?
 
-    data class ImageAttribute(val value: String) : EditorAttribute {
-        override val key: String
-            get() = "image"
-        override val scope: AttributeScope
-            get() = AttributeScope.EMBEDS
-    }
+    data class ImageAttribute(
+        val url: String, override val type: String = "image",
+    ) : EditorAttribute
 
-    data class VideoAttribute(val value: String) : EditorAttribute {
-        override val key: String
-            get() = "video"
-        override val scope: AttributeScope
-            get() = AttributeScope.EMBEDS
-    }
+    data class VideoAttribute(
+        val url: String,
+        override val type: String = "video",
+    ) : EditorAttribute
 
     data class TextAttribute(
-        val richText: RichTextValue = RichTextValue()
+        val content: RichTextState = RichTextState(), override val type: String = "text",
     ) : EditorAttribute {
-        override val key: String
-            get() = "text"
-        override val scope: AttributeScope
-            get() = AttributeScope.TEXTS
 
-        val isEmpty get() = richText.text.isEmpty()
+        val isEmpty get() = content.text.isEmpty()
 
-        val selection get() = richText.textFieldValue.selection
+        val selection get() = content.textFieldValue.selection
     }
 }

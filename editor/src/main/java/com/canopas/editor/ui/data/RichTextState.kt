@@ -3,7 +3,6 @@ package com.canopas.editor.ui.data
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -12,47 +11,64 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import com.canopas.editor.ui.utils.contains
+import com.canopas.editor.ui.utils.remove
 import kotlin.math.max
 import kotlin.math.min
 
-data class RichTextValue constructor(
-    internal var textFieldValue: TextFieldValue,
-    internal val currentStyles: MutableList<RichTextAttribute> = mutableListOf(),
-    internal val parts: MutableList<RichTextPart> = mutableListOf()
+class RichTextState internal constructor(
+    val richText: String = "",
+    val spans: MutableList<RichTextPart> = mutableListOf()
 ) {
 
-    constructor(
-        text: String = "",
-        currentStyles: MutableSet<RichTextAttribute> = mutableSetOf(),
-        parts: MutableList<RichTextPart> = mutableListOf()
-    ) : this(
-        textFieldValue = TextFieldValue(
-            text = text,
-            selection = TextRange(text.length)
-        ),
-        currentStyles.toMutableStateList(),
-        parts.toMutableStateList()
-    ) {
-        updateAnnotatedString()
-    }
+    internal var textFieldValue by mutableStateOf(TextFieldValue(richText))
+        private set
 
 
-    val text get() = textFieldValue.text
+    private var toAddSpanStyle: SpanStyle by mutableStateOf(SpanStyle())
+    private var toRemoveSpanStyle: SpanStyle by mutableStateOf(SpanStyle())
+
+    private val currentSpanStyle: SpanStyle
+        get() = currentAppliedSpanStyle.merge(toAddSpanStyle).remove(toRemoveSpanStyle)
+
+    private var currentAppliedSpanStyle: SpanStyle by mutableStateOf(DefaultSpanStyle)
+
 
     internal var visualTransformation: VisualTransformation by mutableStateOf(VisualTransformation.None)
 
     private var annotatedString by mutableStateOf(AnnotatedString(text = ""))
 
-    fun updateAnnotatedString(newValue: TextFieldValue = textFieldValue) {
+    val text get() = textFieldValue.text
+
+    private val selection
+        get() = textFieldValue.selection
+
+
+    init {
+        updateTextFieldValue()
+    }
+
+    internal fun updateTextFieldValue(newValue: TextFieldValue = textFieldValue) {
+        if (
+            newValue.text == textFieldValue.text &&
+            newValue.selection != textFieldValue.selection
+        ) {
+            textFieldValue = newValue
+        } else {
+            updateAnnotatedString(newValue)
+        }
+
+        toAddSpanStyle = SpanStyle()
+        toRemoveSpanStyle = SpanStyle()
+        updateCurrentSpanStyle()
+    }
+
+    private fun updateAnnotatedString(newValue: TextFieldValue = textFieldValue) {
         annotatedString = buildAnnotatedString {
             append(newValue.text)
-            parts.forEach { part ->
-                val spanStyle = part.styles.fold(SpanStyle()) { spanStyle, richTextStyle ->
-                    richTextStyle.apply(spanStyle)
-                }
-
+            spans.forEach { part ->
                 addStyle(
-                    style = spanStyle,
+                    style = part.spanStyle,
                     start = part.fromIndex,
                     end = part.toIndex + 1,
                 )
@@ -67,152 +83,195 @@ data class RichTextValue constructor(
         }
     }
 
+    private fun updateCurrentSpanStyle() {
+        currentAppliedSpanStyle = if (selection.collapsed) {
+            getRichSpanByTextIndex(textIndex = selection.min - 1)
+        } else {
+            getRichSpanListByTextRange(selection).distinct()
+                .fold(SpanStyle()) { default: SpanStyle, spanStyle: SpanStyle ->
+                    default + spanStyle
+                }
 
-    fun toggleStyle(style: RichTextAttribute) {
-        if (currentStyles.contains(style)) {
+        }
+    }
+
+    private fun getRichSpanByTextIndex(textIndex: Int): SpanStyle {
+        val matchingParts = spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
+        return matchingParts.fold(DefaultSpanStyle) { accumulatedSpanStyle, part ->
+            accumulatedSpanStyle + part.spanStyle
+        }
+    }
+
+    private fun getRichSpanListByTextRange(selection: TextRange): List<SpanStyle> {
+        val matchingSpans = mutableListOf<SpanStyle>()
+
+        for (part in spans) {
+            val partRange = TextRange(part.fromIndex, part.toIndex)
+            if (selection.overlaps(partRange)) {
+                matchingSpans.add(part.spanStyle)
+            }
+        }
+
+        return matchingSpans
+    }
+
+    fun TextRange.overlaps(range: TextRange): Boolean {
+        return end > range.start && start < range.end
+    }
+
+    fun toggleStyle(style: SpanStyle) {
+        if (currentSpanStyle.contains(style)) {
             removeStyle(style)
         } else {
             addStyle(style)
         }
     }
 
-    private fun addStyle(vararg style: RichTextAttribute) {
-        currentStyles.addAll(style)
-        applyStylesToSelectedText(*style)
-    }
-
-    fun updateStyles(newStyles: Set<RichTextAttribute>) {
-        currentStyles.clear()
-        currentStyles.addAll(newStyles)
-
-        applyStylesToSelectedText(*newStyles.toTypedArray())
-    }
-
-    private fun applyStylesToSelectedText(vararg style: RichTextAttribute) {
-        updateSelectedTextParts { part ->
-            part.styles.addAll(style.toSet())
-            part
+    private fun addStyle(style: SpanStyle) {
+        if (!currentSpanStyle.contains(style)) {
+            toAddSpanStyle = toAddSpanStyle.merge(style)
+            toRemoveSpanStyle = toRemoveSpanStyle.remove(style)
         }
-        updateAnnotatedString()
-    }
 
-    private fun removeStyle(vararg style: RichTextAttribute) {
-        currentStyles.removeAll(style.toSet())
-        removeStylesFromSelectedText(*style)
-    }
-
-    private fun removeStylesFromSelectedText(vararg style: RichTextAttribute) {
-        updateSelectedTextParts { part ->
-            part.styles.removeAll(style.toSet())
-            part
+        if (!selection.collapsed) {
+            applyStylesToSelectedText(style)
         }
-        updateAnnotatedString()
+    }
+
+    private fun applyStylesToSelectedText(style: SpanStyle) {
+        updateSelectedTextParts { part ->
+            part.copy(spanStyle = part.spanStyle.merge(style))
+        }
+        updateTextFieldValue()
+    }
+
+    private fun removeStyle(style: SpanStyle) {
+        if (currentSpanStyle.contains(style)) {
+            toRemoveSpanStyle = toRemoveSpanStyle.merge(style)
+            toAddSpanStyle = toAddSpanStyle.remove(style)
+        }
+
+        if (!selection.collapsed)
+            removeStylesFromSelectedText(style)
+    }
+
+    private fun removeStylesFromSelectedText(style: SpanStyle) {
+        updateSelectedTextParts { part ->
+            part.copy(spanStyle = part.spanStyle.remove(style))
+        }
+        updateTextFieldValue()
     }
 
     fun onTextFieldValueChange(newTextFieldValue: TextFieldValue) {
-        if (newTextFieldValue.text.length > textFieldValue.text.length) {
+        // Log.d("XXX", "onTextFieldValueChange")
+        if (newTextFieldValue.text.length > textFieldValue.text.length)
             handleAddingCharacters(newTextFieldValue)
-        } else if (newTextFieldValue.text.length < textFieldValue.text.length) {
+        else if (newTextFieldValue.text.length < textFieldValue.text.length)
             handleRemovingCharacters(newTextFieldValue)
+        else if (
+            newTextFieldValue.text == textFieldValue.text &&
+            newTextFieldValue.selection != textFieldValue.selection
+        ) {
+            adjustSelection(newTextFieldValue.selection)
+            return
         }
 
-        updateCurrentStyles(newTextFieldValue = newTextFieldValue)
-
         collapseParts(textLastIndex = newTextFieldValue.text.lastIndex)
+        updateTextFieldValue(newTextFieldValue)
+    }
 
-        updateAnnotatedString(newTextFieldValue)
+    private fun adjustSelection(selection: TextRange? = null) {
+        if (selection != null) {
+            updateTextFieldValue(textFieldValue.copy(selection = selection))
+        }
     }
 
     private fun handleAddingCharacters(newValue: TextFieldValue) {
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
-        if (newValue.text.getOrNull(startTypeIndex) == '\n') {
-            removeTitleStylesIfAny()
-        }
+        val currentStyles = currentSpanStyle
 
-        val currentStyles = currentStyles.toMutableStateList()
-
-        val startRichTextPartIndex = parts.indexOfFirst {
+        val startRichTextPartIndex = spans.indexOfFirst {
             (startTypeIndex - 1) in it.fromIndex..it.toIndex
         }
-        val endRichTextPartIndex = parts.indexOfFirst {
+        val endRichTextPartIndex = spans.indexOfFirst {
             startTypeIndex in it.fromIndex..it.toIndex
         }
 
-        val startRichTextPart = parts.getOrNull(startRichTextPartIndex)
-        val endRichTextPart = parts.getOrNull(endRichTextPartIndex)
+        val startRichTextPart = spans.getOrNull(startRichTextPartIndex)
+        val endRichTextPart = spans.getOrNull(endRichTextPartIndex)
 
-        if (currentStyles == startRichTextPart?.styles) {
-            parts[startRichTextPartIndex] = startRichTextPart.copy(
+        if (currentStyles == startRichTextPart?.spanStyle) {
+            spans[startRichTextPartIndex] = startRichTextPart.copy(
                 toIndex = startRichTextPart.toIndex + typedChars
             )
 
-            if (startRichTextPartIndex < parts.lastIndex) {
+            if (startRichTextPartIndex < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 1,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
-        } else if (currentStyles == endRichTextPart?.styles) {
-            parts[endRichTextPartIndex] = endRichTextPart.copy(
+        } else if (currentStyles == endRichTextPart?.spanStyle) {
+            spans[endRichTextPartIndex] = endRichTextPart.copy(
                 toIndex = endRichTextPart.toIndex + typedChars
             )
 
-            if (endRichTextPartIndex < parts.lastIndex) {
+            if (endRichTextPartIndex < spans.lastIndex) {
                 forwardParts(
                     fromIndex = endRichTextPartIndex + 1,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
         } else if (startRichTextPart == endRichTextPart && startRichTextPart != null) {
-            parts[startRichTextPartIndex] = startRichTextPart.copy(
+            spans[startRichTextPartIndex] = startRichTextPart.copy(
                 toIndex = startTypeIndex - 1
             )
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, startRichTextPart.copy(
                     fromIndex = startTypeIndex + typedChars,
                     toIndex = startRichTextPart.toIndex + typedChars
                 )
             )
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    styles = currentStyles.toMutableStateList()
+                    spanStyle = currentStyles
                 )
             )
 
-            if ((startRichTextPartIndex + 2) < parts.lastIndex) {
+            if ((startRichTextPartIndex + 2) < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 3,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
         } else if (endRichTextPart == null) {
-            parts.add(
+            spans.add(
                 RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    styles = currentStyles
+                    spanStyle = currentStyles
                 )
             )
         } else {
-            parts.add(
+            spans.add(
                 startRichTextPartIndex + 1, RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    styles = currentStyles
+                    spanStyle = currentStyles
                 )
             )
 
-            if ((startRichTextPartIndex + 1) < parts.lastIndex) {
+            if ((startRichTextPartIndex + 1) < spans.lastIndex) {
                 forwardParts(
                     fromIndex = startRichTextPartIndex + 2,
-                    toIndex = parts.lastIndex,
+                    toIndex = spans.lastIndex,
                     by = typedChars,
                 )
             }
@@ -225,29 +284,12 @@ data class RichTextValue constructor(
         by: Int
     ) {
         val start = max(fromIndex, 0)
-        val end = min(toIndex, parts.lastIndex)
+        val end = min(toIndex, spans.lastIndex)
         (start..end).forEach { index ->
-            parts[index] = parts[index].copy(
-                fromIndex = parts[index].fromIndex + by,
-                toIndex = parts[index].toIndex + by,
+            spans[index] = spans[index].copy(
+                fromIndex = spans[index].fromIndex + by,
+                toIndex = spans[index].toIndex + by,
             )
-        }
-    }
-
-    private fun removeTitleStylesIfAny() {
-        val isHeader = currentStyles.any { it.scope == TextAttributeScope.HEADER }
-        if (isHeader) clearStyles()
-    }
-
-    private fun clearStyles() {
-        currentStyles.clear()
-        removeAllStylesFromSelectedText()
-    }
-
-    private fun removeAllStylesFromSelectedText() {
-        updateSelectedTextParts { part ->
-            part.styles.clear()
-            part
         }
     }
 
@@ -259,9 +301,9 @@ data class RichTextValue constructor(
         val endRemoveIndex = newTextFieldValue.selection.min
         val removeRange = endRemoveIndex until startRemoveIndex
 
-        val iterator = parts.iterator()
+        val iterator = spans.iterator()
 
-        val partsCopy = parts.toMutableList()
+        val partsCopy = spans.toMutableList()
 
         while (iterator.hasNext()) {
             val part = iterator.next()
@@ -287,29 +329,8 @@ data class RichTextValue constructor(
             }
         }
 
-        parts.clear()
-        parts.addAll(partsCopy)
-    }
-
-    private fun updateCurrentStyles(
-        newTextFieldValue: TextFieldValue
-    ) {
-        val newStyles = parts
-            .firstOrNull {
-                if (newTextFieldValue.selection.min == 0 && it.fromIndex == 0) {
-                    return@firstOrNull true
-                }
-                (newTextFieldValue.selection.min - 1) in (it.fromIndex..it.toIndex)
-            }
-            ?.styles
-            ?: currentStyles
-
-        setCurrentStyles(newStyles.toSet())
-    }
-
-    private fun setCurrentStyles(currentStyles: Set<RichTextAttribute>) {
-        this.currentStyles.clear()
-        this.currentStyles.addAll(currentStyles)
+        spans.clear()
+        spans.addAll(partsCopy)
     }
 
     private fun updateSelectedTextParts(
@@ -322,17 +343,17 @@ data class RichTextValue constructor(
         val fromIndex = textFieldValue.selection.min
         val toIndex = textFieldValue.selection.max
 
-        val selectedParts = parts.filter { part ->
+        val selectedParts = spans.filter { part ->
             part.fromIndex < toIndex && part.toIndex >= fromIndex
         }
 
         selectedParts.forEach { part ->
-            val index = parts.indexOf(part)
-            if (index !in parts.indices) return@forEach
+            val index = spans.indexOf(part)
+            if (index !in spans.indices) return@forEach
 
             if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
-                parts[index] = part.copy(toIndex = fromIndex - 1)
-                parts.add(
+                spans[index] = part.copy(toIndex = fromIndex - 1)
+                spans.add(
                     index + 1,
                     update(
                         part.copy(
@@ -341,17 +362,17 @@ data class RichTextValue constructor(
                         )
                     )
                 )
-                parts.add(index + 2, part.copy(fromIndex = toIndex))
+                spans.add(index + 2, part.copy(fromIndex = toIndex))
             } else if (part.fromIndex < fromIndex) {
-                parts[index] = part.copy(
+                spans[index] = part.copy(
                     toIndex = fromIndex - 1
                 )
-                parts.add(index + 1, update(part.copy(fromIndex = fromIndex)))
+                spans.add(index + 1, update(part.copy(fromIndex = fromIndex)))
             } else if (part.toIndex >= toIndex) {
-                parts[index] = update(part.copy(toIndex = toIndex - 1))
-                parts.add(index + 1, part.copy(fromIndex = toIndex))
+                spans[index] = update(part.copy(toIndex = toIndex - 1))
+                spans.add(index + 1, part.copy(fromIndex = toIndex))
             } else {
-                parts[index] = update(part)
+                spans[index] = update(part)
             }
         }
     }
@@ -364,7 +385,7 @@ data class RichTextValue constructor(
         val endRangeMap = mutableMapOf<Int, Int>()
         val removedIndexes = mutableSetOf<Int>()
 
-        val partsCopy = parts.toMutableList() // Create a copy of the original parts
+        val partsCopy = spans.toMutableList() // Create a copy of the original parts
 
         partsCopy.forEachIndexed { index, part ->
             startRangeMap[part.fromIndex] = index
@@ -386,7 +407,7 @@ data class RichTextValue constructor(
 
             if (startRangeMap.containsKey(end + 1)) {
                 val otherRangeIndex = requireNotNull(startRangeMap[end + 1])
-                if (partsCopy[otherRangeIndex].styles == part.styles) {
+                if (partsCopy[otherRangeIndex].spanStyle == part.spanStyle) {
                     partsCopy[index] = part.copy(
                         toIndex = partsCopy[otherRangeIndex].toIndex
                     )
@@ -400,7 +421,7 @@ data class RichTextValue constructor(
 
             if (endRangeMap.containsKey(start - 1)) {
                 val otherRangeIndex = requireNotNull(endRangeMap[start - 1])
-                if (partsCopy[otherRangeIndex].styles == part.styles) {
+                if (partsCopy[otherRangeIndex].spanStyle == part.spanStyle) {
                     partsCopy[index] = part.copy(
                         fromIndex = partsCopy[otherRangeIndex].fromIndex
                     )
@@ -421,18 +442,23 @@ data class RichTextValue constructor(
         removedIndexes.reversed().forEach { partsCopy.removeAt(it) }
 
         // Replace the original parts with the modified copy
-        parts.clear()
-        parts.addAll(partsCopy)
+        spans.clear()
+        spans.addAll(partsCopy)
     }
 
-    internal fun merge(nextItem: RichTextValue) {
+    internal fun merge(nextItem: RichTextState) {
         val text = this.text + "\n" + nextItem.text
-        val existingParts = ArrayList(this.parts)
-        this.parts.addAll(nextItem.parts)
-        forwardParts(existingParts.size, this.parts.size, this.text.length + 1)
+        val existingParts = ArrayList(this.spans)
+        this.spans.addAll(nextItem.spans)
+        forwardParts(existingParts.size, this.spans.size, this.text.length + 1)
         val newTextField = TextFieldValue(text, selection = TextRange(text.length))
-        updateAnnotatedString(newTextField)
+        updateTextFieldValue(newTextField)
     }
 
-    fun hasStyle(style: RichTextAttribute) = currentStyles.any { it.key == style.key }
+    fun hasStyle(style: SpanStyle) = currentSpanStyle.contains(style)
+
+    companion object {
+        internal val DefaultSpanStyle = SpanStyle()
+    }
 }
+

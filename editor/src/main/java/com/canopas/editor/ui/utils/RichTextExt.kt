@@ -1,28 +1,28 @@
-package com.canopas.editor.ui
+package com.canopas.editor.ui.utils
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.canopas.editor.ui.data.RichTextPart
-import com.canopas.editor.ui.data.RichTextValue
+import com.canopas.editor.ui.data.RichTextState
 
 
-fun RichTextValue.split(cursorPosition: Int): Pair<RichTextValue, RichTextValue> {
+fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState> {
     if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
 
-    val copyParts = ArrayList(parts)
+    val copyParts = ArrayList(spans)
     val subtext1 = text.substring(0, cursorPosition)
     val subtext2 = text.substring(cursorPosition)
-    val textParts1 = removeParts(parts, cursorPosition).toMutableList()
+    val textParts1 = removeParts(spans, cursorPosition).toMutableList()
 
-    this.parts.clear()
-    this.parts.addAll(textParts1)
+    this.spans.clear()
+    this.spans.addAll(textParts1)
     val textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
-    this.updateAnnotatedString(textFieldValue)
+    this.updateTextFieldValue(textFieldValue)
 
 
     val newList = forwardParts(copyParts, cursorPosition).toMutableList()
     val textValue2 =
-        RichTextValue(text = subtext2, currentStyles.toMutableSet(), parts = newList)
+        RichTextState(richText = subtext2, spans = newList)
     return Pair(this, textValue2)
 }
 
@@ -35,7 +35,7 @@ private fun removeParts(
             val updatedFromIndex = textPart.fromIndex
             val updatedToIndex =
                 if (cursorPosition > textPart.toIndex) textPart.toIndex else cursorPosition - 1
-            RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
+            RichTextPart(updatedFromIndex, updatedToIndex, textPart.spanStyle)
         }
 }
 
@@ -50,7 +50,7 @@ private fun forwardParts(
                 if (cursorPosition >= textPart.fromIndex) 0 else textPart.fromIndex - cursorPosition
             val updatedToIndex =
                 textPart.toIndex - cursorPosition
-            RichTextPart(updatedFromIndex, updatedToIndex, textPart.styles)
+            RichTextPart(updatedFromIndex, updatedToIndex, textPart.spanStyle)
         }
 }
 
