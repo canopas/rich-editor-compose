@@ -54,12 +54,7 @@ import com.canopas.editor.ui.utils.H4SPanStyle
 import com.canopas.editor.ui.utils.H5SPanStyle
 import com.canopas.editor.ui.utils.H6SPanStyle
 import com.canopas.editor.ui.utils.ItalicSpanStyle
-import com.canopas.editor.ui.utils.UnderlineSpanStyle
 import com.example.texteditor.ui.theme.TextEditorTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,7 +109,7 @@ fun StyleContainer(
         horizontalArrangement = Arrangement.Start,
     ) {
 
-        TitleStyleButton(state)
+      //  TitleStyleButton(state)
         StyleButton(
             icon = R.drawable.ic_bold,
             style = BoldSpanStyle,
@@ -127,34 +122,7 @@ fun StyleContainer(
             value = state,
         )
 
-        StyleButton(
-            icon = R.drawable.ic_underlined,
-            style = UnderlineSpanStyle,
-            value = state,
-        )
 
-        ImagePicker(
-            value = state,
-        )
-
-        VideoPicker(
-            value = state,
-        )
-
-        IconButton(
-            modifier = Modifier
-                .padding(2.dp)
-                .size(48.dp),
-            onClick = {
-                Log.d("XXX", "Json ${state.toJson()} ")
-
-            },
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_save), contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
 
         IconButton(
             modifier = Modifier
@@ -162,14 +130,14 @@ fun StyleContainer(
                 .size(48.dp),
             onClick = {
                 var json = state.toJson()
-                state.setJson("")
-                scope.launch {
-                    delay(5000)
-                    withContext(Dispatchers.Main) {
-                        Log.d("XXX", "Json ${json} ")
-                        state.setJson(json)
-                    }
-                }
+//                state.setJson("")
+//                scope.launch {
+//                    delay(5000)
+//                    withContext(Dispatchers.Main) {
+                Log.d("XXX", "Json ${json} ")
+//                        state.setJson(json)
+//                    }
+//                }
 
             },
         ) {
