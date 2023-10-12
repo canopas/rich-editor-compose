@@ -1,10 +1,10 @@
 package com.canopas.editor.ui.data
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import com.canopas.editor.ui.parser.json.toSpansString
 import kotlin.math.max
 import kotlin.math.min
 
@@ -57,15 +58,13 @@ class RichTextState internal constructor(
         annotatedString = buildAnnotatedString {
             append(newValue.text)
             spans.forEach { part ->
-                addStyle(
-                    style = part.spanStyle.fold(SpanStyle()) { spanstyle, newStyle ->
-                        spanstyle.merge(
-                            newStyle
-                        )
-                    },
-                    start = part.fromIndex,
-                    end = part.toIndex + 1,
-                )
+                part.spanStyle.let {
+                    addStyle(
+                        style = it,
+                        start = part.fromIndex,
+                        end = part.toIndex + 1,
+                    )
+                }
             }
         }
         textFieldValue = newValue
@@ -91,7 +90,7 @@ class RichTextState internal constructor(
 
     private fun getRichSpanByTextIndex(textIndex: Int): List<SpanStyle> {
         return spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
-            .flatMap { it.spanStyle }
+            .mapNotNull { it.spanStyle }
     }
 
     private fun getRichSpanListByTextRange(selection: TextRange): List<SpanStyle> {
@@ -100,7 +99,9 @@ class RichTextState internal constructor(
         for (part in spans) {
             val partRange = TextRange(part.fromIndex, part.toIndex)
             if (selection.overlaps(partRange)) {
-                matchingSpans.addAll(part.spanStyle)
+                part.spanStyle.let {
+                    matchingSpans.add(it)
+                }
             }
         }
 
@@ -140,8 +141,7 @@ class RichTextState internal constructor(
 
     private fun applyStylesToSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.spanStyle.add(style)
-            part
+            part.copy(spanStyle = style)
         }
         updateTextFieldValue()
     }
@@ -157,8 +157,7 @@ class RichTextState internal constructor(
 
     private fun removeStylesFromSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.spanStyle.remove(style)
-            part
+            part.copy(spanStyle = style)
         }
         updateTextFieldValue()
     }
@@ -178,6 +177,8 @@ class RichTextState internal constructor(
 
         collapseParts(textLastIndex = newTextFieldValue.text.lastIndex)
         updateTextFieldValue(newTextFieldValue)
+        //  Log.d("XXX", "after collapseParts span size ${spans.size}")
+
     }
 
     private fun adjustSelection(selection: TextRange? = null) {
@@ -186,95 +187,277 @@ class RichTextState internal constructor(
         }
     }
 
+//    private fun handleAddingCharacters2(newValue: TextFieldValue) {
+//        val typedChars = newValue.text.length - textFieldValue.text.length
+//        val startTypeIndex = newValue.selection.min - typedChars
+//
+//        val currentStyles = this.currentStyles.toMutableStateList()
+//
+//        val startRichTextPartIndex = spans.indexOfFirst {
+//            (startTypeIndex - 1) in it.fromIndex..it.toIndex
+//        }
+//        val endRichTextPartIndex = spans.indexOfFirst {
+//            startTypeIndex in it.fromIndex..it.toIndex
+//        }
+//
+//        val startRichTextPart = spans.getOrNull(startRichTextPartIndex)
+//        val endRichTextPart = spans.getOrNull(endRichTextPartIndex)
+//
+//        if (currentStyles == startRichTextPart?.spanStyle) {
+//            spans[startRichTextPartIndex] = startRichTextPart.copy(
+//                toIndex = startRichTextPart.toIndex + typedChars
+//            )
+//
+
+//            if (startRichTextPartIndex < spans.lastIndex) {
+//                forwardParts(
+//                    fromIndex = startRichTextPartIndex + 1,
+//                    toIndex = spans.lastIndex,
+//                    by = typedChars,
+//                )
+//            }
+//        } else if (currentStyles == endRichTextPart?.spanStyle) {
+//            spans[endRichTextPartIndex] = endRichTextPart.copy(
+//                toIndex = endRichTextPart.toIndex + typedChars
+//            )
+//
+//            if (endRichTextPartIndex < spans.lastIndex) {
+//                forwardParts(
+//                    fromIndex = endRichTextPartIndex + 1,
+//                    toIndex = spans.lastIndex,
+//                    by = typedChars,
+//                )
+//            }
+//        } else if (startRichTextPart == endRichTextPart && startRichTextPart != null) {
+//            spans[startRichTextPartIndex] = startRichTextPart.copy(
+//                toIndex = startTypeIndex - 1
+//            )
+//            spans.add(
+//                startRichTextPartIndex + 1, startRichTextPart.copy(
+//                    fromIndex = startTypeIndex + typedChars,
+//                    toIndex = startRichTextPart.toIndex + typedChars
+//                )
+//            )
+//            spans.add(
+//                startRichTextPartIndex + 1, RichTextPart(
+//                    fromIndex = startTypeIndex,
+//                    toIndex = startTypeIndex + typedChars - 1,
+//                    spanStyle = currentStyles
+//                )
+//            )
+//
+//            if ((startRichTextPartIndex + 2) < spans.lastIndex) {
+//                forwardParts(
+//                    fromIndex = startRichTextPartIndex + 3,
+//                    toIndex = spans.lastIndex,
+//                    by = typedChars,
+//                )
+//            }
+//        } else if (endRichTextPart == null) {
+//            spans.add(
+//                RichTextPart(
+//                    fromIndex = startTypeIndex,
+//                    toIndex = startTypeIndex + typedChars - 1,
+//                    spanStyle = currentStyles
+//                )
+//            )
+//        } else {
+//            spans.add(
+//                startRichTextPartIndex + 1, RichTextPart(
+//                    fromIndex = startTypeIndex,
+//                    toIndex = startTypeIndex + typedChars - 1,
+//                    spanStyle = currentStyles
+//                )
+//            )
+//
+//            if ((startRichTextPartIndex + 1) < spans.lastIndex) {
+//                forwardParts(
+//                    fromIndex = startRichTextPartIndex + 2,
+//                    toIndex = spans.lastIndex,
+//                    by = typedChars,
+//                )
+//            }
+//        }
+//    }
+
+
     private fun handleAddingCharacters(newValue: TextFieldValue) {
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
-        val currentStyles = this.currentStyles.toMutableStateList()
 
-        val startRichTextPartIndex = spans.indexOfFirst {
-            (startTypeIndex - 1) in it.fromIndex..it.toIndex
+        val selectedStyles = currentStyles.toMutableList()
+
+
+//        if (currentStyles.isNotEmpty()) {
+        // val tempSpans = spans.toList()
+
+        val startParts = getAllActiveSpan(startTypeIndex - 1)
+        val endParts = getAllActiveSpan(startTypeIndex)
+        Log.d("XXX", "matching span with START ${startParts.size} END ${endParts.size}")
+
+        if (startParts.isNotEmpty() && endParts.isNotEmpty() && startParts == endParts) {
+            Log.d("XXX", "found start and end matches")
+            startParts.forEach {
+                if (currentStyles.contains(it.spanStyle)) {
+                    Log.d("XXX", "just update the to index")
+
+                    val spanIndex = spans.indexOf(it)
+                    spans[spanIndex].translateBy(typedChars)
+                    selectedStyles.remove(it.spanStyle)
+                    forwardSpans(startTypeIndex + 1, typedChars)
+                } else {
+
+                    Log.d(
+                        "XXXX", "update for ${it.spanStyle.toSpansString()} " +
+                                "existing spans ${spans.map { it.spanStyle.toSpansString() }} " +
+                                "from indexs ${spans.map { it.fromIndex }} " +
+                                "to indexs ${spans.map { it.toIndex }}"
+                    )
+
+                    val startPartIndex = spans.indexOf(it)
+
+                    spans[startPartIndex] = it.copy(
+                        toIndex = startTypeIndex - 1
+                    )
+                    selectedStyles.remove(it.spanStyle)
+
+                    spans.add(
+                        startPartIndex + 1, it.copy(
+                            fromIndex = startTypeIndex + typedChars,
+                            toIndex = it.toIndex + typedChars
+                        )
+                    )
+
+                    Log.d(
+                        "XXXX", "updated spans ${spans.map { it.spanStyle.toSpansString() }} " +
+                                "from indexs ${spans.map { it.fromIndex }} " +
+                                "to indexs ${spans.map { it.toIndex }}"
+                    )
+
+                    selectedStyles.forEach {
+                        Log.d("XXX", "add remaining style ${it.toSpansString()}")
+                        spans.add(
+                            startPartIndex + 1, RichTextPart(
+                                fromIndex = startTypeIndex,
+                                toIndex = startTypeIndex + typedChars - 1,
+                                spanStyle = it
+                            )
+                        )
+                    }
+                    selectedStyles.clear()
+
+                    if (startPartIndex < spans.lastIndex) {
+                        Log.d("XXX", "forwardParts parts when parts are equal")
+                        forwardParts(
+                            fromIndex = startTypeIndex + 1,
+                            toIndex = spans.lastIndex,
+                            by = typedChars
+                        )
+                    }
+                    // selectedStyles.clear()
+                }
+            }
+
+        } else if (startParts.isNotEmpty()) {
+            val tempSpans = spans.toList()
+            startParts.forEach { richTextPart ->
+                val spanIndex = spans.indexOf(richTextPart)
+                if (currentStyles.contains(richTextPart.spanStyle)) {
+                    spans[spanIndex].translateBy(typedChars)
+                    selectedStyles.remove(richTextPart.spanStyle)
+                    forwardSpans(startTypeIndex + 1, typedChars)
+                } else {
+                    spans[spanIndex] = richTextPart.copy(toIndex = startTypeIndex - 1)
+                    selectedStyles.remove(richTextPart.spanStyle)
+                    spans.add(
+                        index = spanIndex + 1, richTextPart.copy(
+                            fromIndex = startTypeIndex + typedChars,
+                            toIndex = richTextPart.toIndex + typedChars
+                        )
+                    )
+
+                    selectedStyles.forEach {
+                        spans.add(
+                            spanIndex + 1, RichTextPart(
+                                fromIndex = startTypeIndex,
+                                toIndex = startTypeIndex + typedChars - 1,
+                                spanStyle = it
+                            )
+                        )
+                    }
+
+                    if (spanIndex < spans.lastIndex) {
+                        Log.d("XXX", "forwardParts parts in start span")
+                        forwardParts(
+                            fromIndex = startTypeIndex + 1,
+                            toIndex = spans.lastIndex,
+                            by = typedChars
+                        )
+                    }
+                    selectedStyles.clear()
+                }
+            }
+        } else if (endParts.isNotEmpty()) {
+            endParts.forEach { richTextPart ->
+                val spanIndex = spans.indexOf(richTextPart)
+
+                if (currentStyles.contains(richTextPart.spanStyle)) {
+                    spans[spanIndex].translateBy(typedChars)
+                    selectedStyles.remove(richTextPart.spanStyle)
+
+                    if (spanIndex < spans.lastIndex) {
+                        forwardParts(
+                            fromIndex = spanIndex + 1,
+                            toIndex = spans.lastIndex,
+                            by = typedChars,
+                        )
+                    }
+                } else {
+                    forwardParts(
+                        fromIndex = spanIndex,
+                        toIndex = spanIndex,
+                        by = typedChars,
+                    )
+                }
+            }
+        } else {
+            Log.d("XXX", "keep forwading")
+            forwardSpans(startTypeIndex + 1, typedChars)
         }
-        val endRichTextPartIndex = spans.indexOfFirst {
-            startTypeIndex in it.fromIndex..it.toIndex
-        }
 
-        val startRichTextPart = spans.getOrNull(startRichTextPartIndex)
-        val endRichTextPart = spans.getOrNull(endRichTextPartIndex)
-
-        if (currentStyles == startRichTextPart?.spanStyle) {
-            spans[startRichTextPartIndex] = startRichTextPart.copy(
-                toIndex = startRichTextPart.toIndex + typedChars
-            )
-
-            if (startRichTextPartIndex < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 1,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
-        } else if (currentStyles == endRichTextPart?.spanStyle) {
-            spans[endRichTextPartIndex] = endRichTextPart.copy(
-                toIndex = endRichTextPart.toIndex + typedChars
-            )
-
-            if (endRichTextPartIndex < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = endRichTextPartIndex + 1,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
-        } else if (startRichTextPart == endRichTextPart && startRichTextPart != null) {
-            spans[startRichTextPartIndex] = startRichTextPart.copy(
-                toIndex = startTypeIndex - 1
-            )
-            spans.add(
-                startRichTextPartIndex + 1, startRichTextPart.copy(
-                    fromIndex = startTypeIndex + typedChars,
-                    toIndex = startRichTextPart.toIndex + typedChars
-                )
-            )
-            spans.add(
-                startRichTextPartIndex + 1, RichTextPart(
-                    fromIndex = startTypeIndex,
-                    toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
-                )
-            )
-
-            if ((startRichTextPartIndex + 2) < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 3,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
-        } else if (endRichTextPart == null) {
+        selectedStyles.forEach {
+            Log.d("XXX", "add style ${it.toSpansString()}")
             spans.add(
                 RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
+                    spanStyle = it
                 )
             )
-        } else {
-            spans.add(
-                startRichTextPartIndex + 1, RichTextPart(
-                    fromIndex = startTypeIndex,
-                    toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
-                )
-            )
+        }
 
-            if ((startRichTextPartIndex + 1) < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 2,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
+    }
+
+    private fun forwardSpans(startTypeIndex: Int, by: Int) {
+        val filteredSpans = spans.filter { it.fromIndex >= startTypeIndex }
+
+        filteredSpans.forEach {
+            Log.d("XXX", "forward style ${it.spanStyle.toSpansString()}")
+            val index = spans.indexOf(it)
+            spans[index].forward(by)
+        }
+    }
+
+    private fun getAllActiveSpan(startIndex: Int): List<RichTextPart> {
+        return spans.filter {
+            startIndex in it.fromIndex..it.toIndex //&& currentStyles.contains(it.spanStyle)
+        }
+    }
+
+    private fun getAllNotActiveSpan(startIndex: Int): List<RichTextPart> {
+        return spans.filter {
+            startIndex in it.fromIndex..it.toIndex && !currentStyles.contains(it.spanStyle)
         }
     }
 
@@ -286,6 +469,7 @@ class RichTextState internal constructor(
         val start = max(fromIndex, 0)
         val end = min(toIndex, spans.lastIndex)
         (start..end).forEach { index ->
+            Log.d("XXX", "forwading by by")
             spans[index] = spans[index].copy(
                 fromIndex = spans[index].fromIndex + by,
                 toIndex = spans[index].toIndex + by,
@@ -438,7 +622,11 @@ class RichTextState internal constructor(
                 toIndex = min(textLastIndex, partsCopy[index].toIndex),
             )
         }
-
+        /*removedIndexes.reversed().forEach {
+                    if (it in 0 until partsCopy.size) {
+                        partsCopy.removeAt(it)
+                    }
+                }*/
         removedIndexes.reversed().forEach { partsCopy.removeAt(it) }
 
         // Replace the original parts with the modified copy

@@ -3,7 +3,16 @@ package com.canopas.editor.ui.data
 import androidx.compose.ui.text.SpanStyle
 
 data class RichTextPart(
-    val fromIndex: Int,
-    val toIndex: Int,
-    val spanStyle: SpanStyle?,
-)
+    var fromIndex: Int,
+    var toIndex: Int,
+    var spanStyle: SpanStyle,
+) {
+    fun translateBy(typedChars: Int) {
+        toIndex += typedChars
+    }
+
+    fun forward(by: Int) {
+        fromIndex += by
+        toIndex += by
+    }
+}
