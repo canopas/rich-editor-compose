@@ -6,13 +6,4 @@ data class RichTextPart(
     var fromIndex: Int,
     var toIndex: Int,
     var spanStyle: SpanStyle,
-) {
-    fun translateBy(typedChars: Int) {
-        toIndex += typedChars
-    }
-
-    fun forward(by: Int) {
-        fromIndex += by
-        toIndex += by
-    }
-}
+)
