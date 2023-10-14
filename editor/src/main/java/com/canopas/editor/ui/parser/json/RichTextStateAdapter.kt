@@ -59,7 +59,7 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         val jsonObject = JsonObject()
         jsonObject.addProperty("from", src?.fromIndex)
         jsonObject.addProperty("to", src?.toIndex)
-      //  jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "") //TODO fix me
+        jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "") //TODO fix me
         return jsonObject
     }
 
@@ -72,8 +72,8 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         val fromIndex = jsonObject.get("from").asInt
         val toIndex = jsonObject.get("to").asInt
         val spansString = jsonObject.get("style").asString
-        val spanStyle = spansString.toSpanStyle() //TODO fix me
-        return RichTextPart(fromIndex, toIndex, mutableListOf<SpanStyle>())
+        val spanStyle = spansString.toSpanStyle()
+        return RichTextPart(fromIndex, toIndex, spanStyle)
     }
 }
 

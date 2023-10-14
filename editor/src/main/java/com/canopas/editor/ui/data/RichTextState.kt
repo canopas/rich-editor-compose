@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -57,15 +56,13 @@ class RichTextState internal constructor(
         annotatedString = buildAnnotatedString {
             append(newValue.text)
             spans.forEach { part ->
-                addStyle(
-                    style = part.spanStyle.fold(SpanStyle()) { spanstyle, newStyle ->
-                        spanstyle.merge(
-                            newStyle
-                        )
-                    },
-                    start = part.fromIndex,
-                    end = part.toIndex + 1,
-                )
+                part.spanStyle.let {
+                    addStyle(
+                        style = it,
+                        start = part.fromIndex,
+                        end = part.toIndex + 1,
+                    )
+                }
             }
         }
         textFieldValue = newValue
@@ -91,7 +88,7 @@ class RichTextState internal constructor(
 
     private fun getRichSpanByTextIndex(textIndex: Int): List<SpanStyle> {
         return spans.filter { textIndex >= it.fromIndex && textIndex <= it.toIndex }
-            .flatMap { it.spanStyle }
+            .map { it.spanStyle }
     }
 
     private fun getRichSpanListByTextRange(selection: TextRange): List<SpanStyle> {
@@ -100,7 +97,9 @@ class RichTextState internal constructor(
         for (part in spans) {
             val partRange = TextRange(part.fromIndex, part.toIndex)
             if (selection.overlaps(partRange)) {
-                matchingSpans.addAll(part.spanStyle)
+                part.spanStyle.let {
+                    matchingSpans.add(it)
+                }
             }
         }
 
@@ -140,8 +139,7 @@ class RichTextState internal constructor(
 
     private fun applyStylesToSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.spanStyle.add(style)
-            part
+            part.copy(spanStyle = style)
         }
         updateTextFieldValue()
     }
@@ -157,8 +155,7 @@ class RichTextState internal constructor(
 
     private fun removeStylesFromSelectedText(style: SpanStyle) {
         updateSelectedTextParts { part ->
-            part.spanStyle.remove(style)
-            part
+            part.copy(spanStyle = style)
         }
         updateTextFieldValue()
     }
@@ -190,91 +187,81 @@ class RichTextState internal constructor(
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
-        val currentStyles = this.currentStyles.toMutableStateList()
+        moveSpans(startTypeIndex, typedChars)
 
-        val startRichTextPartIndex = spans.indexOfFirst {
-            (startTypeIndex - 1) in it.fromIndex..it.toIndex
-        }
-        val endRichTextPartIndex = spans.indexOfFirst {
-            startTypeIndex in it.fromIndex..it.toIndex
-        }
+        val selectedStyles = currentStyles.toMutableList()
+        val startParts = spans.filter { startTypeIndex - 1 in it.fromIndex..it.toIndex }
+        val endParts = spans.filter { startTypeIndex in it.fromIndex..it.toIndex }
+        val commonParts = startParts.intersect(endParts.toSet())
 
-        val startRichTextPart = spans.getOrNull(startRichTextPartIndex)
-        val endRichTextPart = spans.getOrNull(endRichTextPartIndex)
-
-        if (currentStyles == startRichTextPart?.spanStyle) {
-            spans[startRichTextPartIndex] = startRichTextPart.copy(
-                toIndex = startRichTextPart.toIndex + typedChars
-            )
-
-            if (startRichTextPartIndex < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 1,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
+        startParts.filter { it !in commonParts }
+            .forEach {
+                if (selectedStyles.contains(it.spanStyle)) {
+                    val index = spans.indexOf(it)
+                    spans[index] = it.copy(toIndex = it.toIndex + typedChars)
+                    selectedStyles.remove(it.spanStyle)
+                }
             }
-        } else if (currentStyles == endRichTextPart?.spanStyle) {
-            spans[endRichTextPartIndex] = endRichTextPart.copy(
-                toIndex = endRichTextPart.toIndex + typedChars
-            )
 
-            if (endRichTextPartIndex < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = endRichTextPartIndex + 1,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
-        } else if (startRichTextPart == endRichTextPart && startRichTextPart != null) {
-            spans[startRichTextPartIndex] = startRichTextPart.copy(
-                toIndex = startTypeIndex - 1
-            )
-            spans.add(
-                startRichTextPartIndex + 1, startRichTextPart.copy(
-                    fromIndex = startTypeIndex + typedChars,
-                    toIndex = startRichTextPart.toIndex + typedChars
-                )
-            )
-            spans.add(
-                startRichTextPartIndex + 1, RichTextPart(
-                    fromIndex = startTypeIndex,
-                    toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
-                )
-            )
+        endParts.filter { it !in commonParts }
+            .forEach { processSpan(it, typedChars, startTypeIndex, selectedStyles, true) }
 
-            if ((startRichTextPartIndex + 2) < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 3,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
-                )
-            }
-        } else if (endRichTextPart == null) {
+        commonParts.forEach { processSpan(it, typedChars, startTypeIndex, selectedStyles) }
+
+        selectedStyles.forEach {
             spans.add(
                 RichTextPart(
                     fromIndex = startTypeIndex,
                     toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
+                    spanStyle = it
                 )
             )
-        } else {
-            spans.add(
-                startRichTextPartIndex + 1, RichTextPart(
-                    fromIndex = startTypeIndex,
-                    toIndex = startTypeIndex + typedChars - 1,
-                    spanStyle = currentStyles
-                )
-            )
+        }
+    }
 
-            if ((startRichTextPartIndex + 1) < spans.lastIndex) {
-                forwardParts(
-                    fromIndex = startRichTextPartIndex + 2,
-                    toIndex = spans.lastIndex,
-                    by = typedChars,
+    private fun processSpan(
+        richTextPart: RichTextPart,
+        typedChars: Int,
+        startTypeIndex: Int,
+        selectedStyles: MutableList<SpanStyle>,
+        forward: Boolean = false
+    ) {
+
+        val newFromIndex = richTextPart.fromIndex + typedChars
+        val newToIndex = richTextPart.toIndex + typedChars
+
+        val index = spans.indexOf(richTextPart)
+        if (selectedStyles.contains(richTextPart.spanStyle)) {
+            spans[index] = richTextPart.copy(toIndex = newToIndex)
+            selectedStyles.remove(richTextPart.spanStyle)
+        } else {
+            if (forward) {
+                spans[index] = richTextPart.copy(
+                    fromIndex = newFromIndex,
+                    toIndex = newToIndex
                 )
+            } else {
+                spans[index] = richTextPart.copy(toIndex = startTypeIndex - 1)
+                spans.add(
+                    index + 1, richTextPart.copy(
+                        fromIndex = startTypeIndex + typedChars,
+                        toIndex = newToIndex
+                    )
+                )
+                selectedStyles.remove(richTextPart.spanStyle)
             }
+        }
+    }
+
+    private fun moveSpans(startTypeIndex: Int, by: Int) {
+        val filteredSpans = spans.filter { it.fromIndex > startTypeIndex }
+
+        filteredSpans.forEach {
+            val index = spans.indexOf(it)
+            spans[index] = it.copy(
+                fromIndex = it.fromIndex + by,
+                toIndex = it.toIndex + by,
+            )
         }
     }
 
@@ -347,6 +334,11 @@ class RichTextState internal constructor(
             part.fromIndex < toIndex && part.toIndex >= fromIndex
         }
 
+//        if(selectedParts.isEmpty()){
+//            currentStyles.first {
+//
+//            }
+//        }
         selectedParts.forEach { part ->
             val index = spans.indexOf(part)
             if (index !in spans.indices) return@forEach

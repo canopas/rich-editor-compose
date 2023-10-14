@@ -5,5 +5,5 @@ import androidx.compose.ui.text.SpanStyle
 data class RichTextPart(
     val fromIndex: Int,
     val toIndex: Int,
-    val spanStyle: MutableList<SpanStyle>,
+    val spanStyle: SpanStyle,
 )
