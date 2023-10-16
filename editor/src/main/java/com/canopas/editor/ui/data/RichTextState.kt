@@ -138,10 +138,163 @@ class RichTextState internal constructor(
     }
 
     private fun applyStylesToSelectedText(style: SpanStyle) {
-        updateSelectedTextParts { part ->
-            part.copy(spanStyle = style)
+        if (textFieldValue.selection.collapsed) {
+            return
         }
+
+        val fromIndex = textFieldValue.selection.min
+        val toIndex = textFieldValue.selection.max
+
+        val selectedParts = spans.filter { part ->
+            part.fromIndex < toIndex && part.toIndex >= fromIndex
+        }
+
+        val endParts = spans.filter { toIndex in it.fromIndex..it.toIndex }
+        val startParts = spans.filter { fromIndex - 1 in it.fromIndex..it.toIndex }
+
+        //logSpan("Initial")
+        // log("selected parts ${selectedParts.size} style ${style.toSpansString()} from- $fromIndex to- $toIndex")
+
+        if (selectedParts.isEmpty()) {
+            //  log("start parts ${startParts.size} end ${endParts.size}")
+            when {
+                startParts.isNotEmpty() && endParts.isNotEmpty() && startParts == endParts -> {
+                    // log("both match")
+                    startParts.forEach {
+                        val index = spans.indexOf(it)
+                        spans[index] = it.copy(
+                            toIndex = toIndex - 1
+                        )
+                    }
+                }
+
+                style in startParts.map { it.spanStyle } -> {
+                    val parts = startParts.filter { it.spanStyle == style }
+                    parts.forEach {
+                        // log("merge with start part")
+                        val index = spans.indexOf(it)
+                        spans[index] = it.copy(
+                            toIndex = toIndex - 1
+                        )
+                    }
+                }
+
+                style in endParts.map { it.spanStyle } -> {
+                    val parts = endParts.filter { it.spanStyle == style }
+                    parts.forEach {
+                        // log("merge with end part")
+                        val index = spans.indexOf(it)
+                        spans[index] = it.copy(
+                            fromIndex = fromIndex
+                        )
+                    }
+                }
+
+                else -> {
+                    //  log("add span")
+                    spans.add(
+                        RichTextPart(
+                            fromIndex = fromIndex,
+                            toIndex = toIndex - 1,
+                            spanStyle = style
+                        )
+                    )
+                }
+            }
+        } else {
+            //log("start parts ${startParts.size} end parts ${endParts.size}")
+
+            if (startParts.isEmpty() && endParts.isEmpty()) {
+                // log("add span for ${style.toSpansString()}")
+                spans.add(
+                    RichTextPart(
+                        fromIndex = fromIndex,
+                        toIndex = toIndex - 1,
+                        spanStyle = style
+                    )
+                )
+            } else if (startParts.isNotEmpty() && endParts.isNotEmpty() && startParts == endParts) {
+                // log("both match")
+                startParts.forEach {
+                    //  log("both match ${it.toStr()}")
+                    val index = spans.indexOf(it)
+                    spans[index] = it.copy(
+                        toIndex = toIndex - 1
+                    )
+                }
+            } else if (style in startParts.map { it.spanStyle }) {
+                val parts = startParts.filter { it.spanStyle == style }
+                parts.forEach {
+                    val index = spans.indexOf(it)
+                    // log("merge with start part ${it.toStr()}")
+                    spans[index] = it.copy(
+                        toIndex = toIndex - 1
+                    )
+                    //  logSpan("TEST ")
+                }
+            } else if (style in endParts.map { it.spanStyle }) {
+                val parts = endParts.filter { it.spanStyle == style }
+                parts.forEach {
+                    val index = spans.indexOf(it)
+                    //  log("merge with end part")
+                    spans[index] = it.copy(
+                        fromIndex = fromIndex
+                    )
+                }
+            } else {
+                //  log("ELSE CASE add style")
+                spans.add(
+                    RichTextPart(
+                        fromIndex = fromIndex,
+                        toIndex = toIndex - 1,
+                        spanStyle = style
+                    )
+                )
+            }
+
+        }
+
+        //   logSpan("without merge")
+        mergeSequentialParts()
+        //  logSpan("Final")
         updateTextFieldValue()
+    }
+
+    private fun mergeSequentialParts() {
+        if (spans.isEmpty()) return
+
+        val result = mutableListOf<RichTextPart>()
+        val styleToMergedSegments = mutableMapOf<SpanStyle, RichTextPart>()
+
+        for (richTextPart in spans) {
+            val existingSegment = styleToMergedSegments[richTextPart.spanStyle]
+            if (existingSegment != null) {
+                if (existingSegment.toIndex + 1 == richTextPart.fromIndex) {
+                    // Merge by creating a new instance
+                    styleToMergedSegments[richTextPart.spanStyle] = RichTextPart(
+                        existingSegment.fromIndex,
+                        richTextPart.toIndex,
+                        existingSegment.spanStyle
+                    )
+                } else if (richTextPart.toIndex + 1 == existingSegment.fromIndex) {
+                    // Merge by creating a new instance
+                    styleToMergedSegments[richTextPart.spanStyle] = RichTextPart(
+                        richTextPart.fromIndex,
+                        existingSegment.toIndex,
+                        existingSegment.spanStyle
+                    )
+                } else {
+                    result.add(existingSegment)
+                    styleToMergedSegments[richTextPart.spanStyle] = richTextPart
+                }
+            } else {
+                styleToMergedSegments[richTextPart.spanStyle] = richTextPart
+            }
+        }
+
+        result.addAll(styleToMergedSegments.values)
+        spans.clear()
+        spans.addAll(result)
     }
 
     private fun removeStyle(style: SpanStyle) {
@@ -154,8 +307,38 @@ class RichTextState internal constructor(
     }
 
     private fun removeStylesFromSelectedText(style: SpanStyle) {
-        updateSelectedTextParts { part ->
-            part.copy(spanStyle = style)
+        if (textFieldValue.selection.collapsed) {
+            return
+        }
+
+        val fromIndex = textFieldValue.selection.min
+        val toIndex = textFieldValue.selection.max
+
+        val selectedParts = spans.filter { part ->
+            part.fromIndex < toIndex && part.toIndex >= fromIndex && part.spanStyle == style
+        }
+
+        selectedParts.forEach { part ->
+            val index = spans.indexOf(part)
+            if (index !in spans.indices) return@forEach
+
+            if (part.fromIndex < fromIndex && part.toIndex >= toIndex) {
+                spans[index] = part.copy(toIndex = fromIndex - 1)
+                spans.add(
+                    index + 1,
+                    part.copy(
+                        fromIndex = toIndex,
+                    )
+                )
+            } else if (part.fromIndex < fromIndex) {
+                spans[index] = part.copy(
+                    toIndex = fromIndex - 1
+                )
+            } else if (part.toIndex >= toIndex) {
+                spans[index] = part.copy(fromIndex = toIndex)
+            } else {
+                spans.removeAt(index)
+            }
         }
         updateTextFieldValue()
     }
@@ -368,7 +551,6 @@ class RichTextState internal constructor(
             }
         }
     }
-
 
     private fun collapseParts(
         textLastIndex: Int
