@@ -1,7 +1,7 @@
 package com.canopas.editor.ui.parser.json
 
 import androidx.compose.ui.text.SpanStyle
-import com.canopas.editor.ui.data.RichTextPart
+import com.canopas.editor.ui.data.RichTextSpan
 import com.canopas.editor.ui.data.RichTextState
 import com.canopas.editor.ui.utils.BoldSpanStyle
 import com.canopas.editor.ui.utils.H1SPanStyle
@@ -42,24 +42,24 @@ class RichTextStateAdapter : JsonSerializer<RichTextState>, JsonDeserializer<Ric
     ): RichTextState {
         val jsonObject = json?.asJsonObject ?: throw JsonParseException("Invalid JSON")
         val text = jsonObject.get("text").asString
-        val parts = context?.deserialize<MutableList<RichTextPart>>(
+        val parts = context?.deserialize<MutableList<RichTextSpan>>(
             jsonObject.get("spans"),
-            object : TypeToken<MutableList<RichTextPart>>() {}.type
+            object : TypeToken<MutableList<RichTextSpan>>() {}.type
         )
         return RichTextState(text, parts ?: mutableListOf())
     }
 }
 
-class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichTextPart> {
+class RichTextSpanAdapter : JsonSerializer<RichTextSpan>, JsonDeserializer<RichTextSpan> {
     override fun serialize(
-        src: RichTextPart?,
+        src: RichTextSpan?,
         typeOfSrc: Type?,
         context: JsonSerializationContext?
     ): JsonElement {
         val jsonObject = JsonObject()
-        jsonObject.addProperty("from", src?.fromIndex)
-        jsonObject.addProperty("to", src?.toIndex)
-        jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "")
+        jsonObject.addProperty("from", src?.from)
+        jsonObject.addProperty("to", src?.to)
+        jsonObject.addProperty("style", src?.style?.toSpansString() ?: "")
         return jsonObject
     }
 
@@ -67,13 +67,13 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): RichTextPart {
+    ): RichTextSpan {
         val jsonObject = json?.asJsonObject ?: throw JsonParseException("Invalid JSON")
         val fromIndex = jsonObject.get("from").asInt
         val toIndex = jsonObject.get("to").asInt
         val spansString = jsonObject.get("style").asString
         val spanStyle = spansString.toSpanStyle()
-        return RichTextPart(fromIndex, toIndex, spanStyle)
+        return RichTextSpan(fromIndex, toIndex, spanStyle)
     }
 }
 
