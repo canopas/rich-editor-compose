@@ -1,7 +1,6 @@
 package com.example.texteditor
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,10 +54,6 @@ import com.canopas.editor.ui.utils.H6SPanStyle
 import com.canopas.editor.ui.utils.ItalicSpanStyle
 import com.canopas.editor.ui.utils.UnderlineSpanStyle
 import com.example.texteditor.ui.theme.TextEditorTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,43 +135,43 @@ fun StyleContainer(
             value = state,
         )
 
-        IconButton(
-            modifier = Modifier
-                .padding(2.dp)
-                .size(48.dp),
-            onClick = {
-                Log.d("XXX", "Json ${state.toJson()} ")
+//        IconButton(
+//            modifier = Modifier
+//                .padding(2.dp)
+//                .size(48.dp),
+//            onClick = {
+//                Log.d("XXX", "Json ${state.toJson()} ")
+//
+//            },
+//        ) {
+//            Icon(
+//                painter = painterResource(id = R.drawable.ic_save), contentDescription = null,
+//                modifier = Modifier.size(24.dp)
+//            )
+//        }
 
-            },
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_save), contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            modifier = Modifier
-                .padding(2.dp)
-                .size(48.dp),
-            onClick = {
-                var json = state.toJson()
-                state.setJson("")
-                scope.launch {
-                    delay(5000)
-                    withContext(Dispatchers.Main) {
-                        Log.d("XXX", "Json ${json} ")
-                        state.setJson(json)
-                    }
-                }
-
-            },
-        ) {
-            Icon(
-                Icons.Default.Add, contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
+//        IconButton(
+//            modifier = Modifier
+//                .padding(2.dp)
+//                .size(48.dp),
+//            onClick = {
+//                var json = state.toJson()
+//                //  state.setJson("")
+//                //  scope.launch {
+//                // delay(5000)
+//                //  withContext(Dispatchers.Main) {
+//                Log.d("XXX", "Json ${json} ")
+//                // state.setJson(json)
+//                //   }
+//                // }
+//
+//            },
+//        ) {
+//            Icon(
+//                Icons.Default.Add, contentDescription = null,
+//                modifier = Modifier.size(24.dp)
+//            )
+//        }
 
     }
 }
