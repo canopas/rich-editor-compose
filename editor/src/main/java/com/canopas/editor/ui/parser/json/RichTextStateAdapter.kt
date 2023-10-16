@@ -59,7 +59,7 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
         val jsonObject = JsonObject()
         jsonObject.addProperty("from", src?.fromIndex)
         jsonObject.addProperty("to", src?.toIndex)
-        jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "") //TODO fix me
+        jsonObject.addProperty("style", src?.spanStyle?.toSpansString() ?: "")
         return jsonObject
     }
 
@@ -78,84 +78,69 @@ class RichTextPartAdapter : JsonSerializer<RichTextPart>, JsonDeserializer<RichT
 }
 
 fun SpanStyle.toSpansString(): String {
-    val spanStrings = mutableListOf<String>()
+    return if (this.contains(H1SPanStyle)) {
+        spanStyleParserMap[H1SPanStyle] ?: ""
+    } else if (this.contains(H2SPanStyle)) {
+        spanStyleParserMap[H2SPanStyle] ?: ""
+    } else if (this.contains(H3SPanStyle)) {
+        spanStyleParserMap[H3SPanStyle] ?: ""
+    } else if (this.contains(H4SPanStyle)) {
+        spanStyleParserMap[H4SPanStyle] ?: ""
+    } else if (this.contains(H5SPanStyle)) {
+        spanStyleParserMap[H5SPanStyle] ?: ""
+    } else if (this.contains(H6SPanStyle)) {
+        spanStyleParserMap[H6SPanStyle] ?: ""
+    } else if (this.contains(BoldSpanStyle)) {
+        spanStyleParserMap[BoldSpanStyle] ?: ""
+    } else if (this.contains(ItalicSpanStyle)) {
+        spanStyleParserMap[ItalicSpanStyle] ?: ""
+    } else if (this.contains(UnderlineSpanStyle)) {
+        spanStyleParserMap[UnderlineSpanStyle] ?: ""
+    } else ""
 
-    if (this.contains(BoldSpanStyle)) {
-        spanStrings.add(spanStyleParserMap[BoldSpanStyle] ?: "")
-    }
-    if (this.contains(ItalicSpanStyle)) {
-        spanStrings.add(spanStyleParserMap[ItalicSpanStyle] ?: "")
-    }
-    if (this.contains(UnderlineSpanStyle)) {
-        spanStrings.add(spanStyleParserMap[UnderlineSpanStyle] ?: "")
-    }
 
-    if (this.contains(H1SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H1SPanStyle] ?: "")
-    }
-    if (this.contains(H2SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H2SPanStyle] ?: "")
-    }
-    if (this.contains(H3SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H3SPanStyle] ?: "")
-    }
-    if (this.contains(H4SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H4SPanStyle] ?: "")
-    }
-    if (this.contains(H5SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H5SPanStyle] ?: "")
-    }
-    if (this.contains(H6SPanStyle)) {
-        spanStrings.add(spanStyleParserMap[H6SPanStyle] ?: "")
-    }
-
-    return spanStrings.joinToString(",")
 }
 
 fun String.toSpanStyle(): SpanStyle {
     var spanStyle = SpanStyle()
-    val spanNames = this.split(",")
 
-    spanNames.forEach { spanName ->
-        when (spanName.trim()) {
-            spanStyleParserMap[BoldSpanStyle] -> {
-                spanStyle += BoldSpanStyle
-            }
+    when (this.trim()) {
+        spanStyleParserMap[BoldSpanStyle] -> {
+            spanStyle = BoldSpanStyle
+        }
 
-            spanStyleParserMap[ItalicSpanStyle] -> {
-                spanStyle += ItalicSpanStyle
-            }
+        spanStyleParserMap[ItalicSpanStyle] -> {
+            spanStyle = ItalicSpanStyle
+        }
 
-            spanStyleParserMap[UnderlineSpanStyle] -> {
-                spanStyle += UnderlineSpanStyle
-            }
+        spanStyleParserMap[UnderlineSpanStyle] -> {
+            spanStyle = UnderlineSpanStyle
+        }
 
-            spanStyleParserMap[H1SPanStyle] -> {
-                spanStyle += H1SPanStyle
-            }
+        spanStyleParserMap[H1SPanStyle] -> {
+            spanStyle = H1SPanStyle
+        }
 
-            spanStyleParserMap[H2SPanStyle] -> {
-                spanStyle += H2SPanStyle
-            }
+        spanStyleParserMap[H2SPanStyle] -> {
+            spanStyle = H2SPanStyle
+        }
 
-            spanStyleParserMap[H3SPanStyle] -> {
-                spanStyle += H3SPanStyle
-            }
+        spanStyleParserMap[H3SPanStyle] -> {
+            spanStyle = H3SPanStyle
+        }
 
-            spanStyleParserMap[H4SPanStyle] -> {
-                spanStyle += H4SPanStyle
-            }
+        spanStyleParserMap[H4SPanStyle] -> {
+            spanStyle = H4SPanStyle
+        }
 
-            spanStyleParserMap[H5SPanStyle] -> {
-                spanStyle += H5SPanStyle
-            }
+        spanStyleParserMap[H5SPanStyle] -> {
+            spanStyle = H5SPanStyle
+        }
 
-            spanStyleParserMap[H6SPanStyle] -> {
-                spanStyle += H6SPanStyle
-            }
+        spanStyleParserMap[H6SPanStyle] -> {
+            spanStyle = H6SPanStyle
         }
     }
-
     return spanStyle
 }
 
