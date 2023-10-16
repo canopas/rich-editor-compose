@@ -76,16 +76,16 @@ class RichEditorState internal constructor(
 
     fun hasStyle(style: SpanStyle): Boolean {
         return attributes.filterIndexed { index, value ->
-            focusedAttributeIndex == index && value.type == "text"
+            focusedAttributeIndex == index && value.type == TYPE_TEXT
         }.any { (it as TextAttribute).content.hasStyle(style) }
     }
 
     private fun getRichTexts(): List<TextAttribute> =
-        attributes.filter { it.type == "text" }.map { it as TextAttribute }
+        attributes.filter { it.type == TYPE_TEXT }.map { it as TextAttribute }
 
     fun toggleStyle(style: SpanStyle): RichEditorState {
         attributes.forEach { value ->
-            if (value.type == "text") {
+            if (value.type == TYPE_TEXT) {
                 ((value as TextAttribute)).content.toggleStyle(style)
             }
         }
@@ -95,7 +95,7 @@ class RichEditorState internal constructor(
 
     fun updateStyle(style: SpanStyle): RichEditorState {
         attributes.forEach { value ->
-            if (value.type == "text") {
+            if (value.type == TYPE_TEXT) {
                 ((value as TextAttribute)).content.updateStyle(style)
             }
         }
@@ -120,7 +120,7 @@ class RichEditorState internal constructor(
         }
 
         val value = attributes.last()
-        if (value.type == "text" && (value as TextAttribute).isEmpty) {
+        if (value.type == TYPE_TEXT && (value as TextAttribute).isEmpty) {
             add(attribute, attributes.lastIndex)
             return
         }
@@ -168,7 +168,7 @@ class RichEditorState internal constructor(
         }
         if (upIndex != -1 && upIndex < attributes.size) {
             val item = attributes[upIndex]
-            if (item.type != "text" && upIndex == focusedAttributeIndex) {
+            if (item.type != TYPE_TEXT && upIndex == focusedAttributeIndex) {
                 handleRemoveAndMerge(upIndex)
                 return
             } else {
@@ -183,7 +183,7 @@ class RichEditorState internal constructor(
         val nextItem = attributes.elementAtOrNull(index + 1) ?: return
         clearFocus()
         remove(index)
-        if (previousItem.type == "text" && nextItem.type == "text") {
+        if (previousItem.type == TYPE_TEXT && nextItem.type == TYPE_TEXT) {
             if (!(nextItem as TextAttribute).isEmpty) {
                 (previousItem as TextAttribute).content.merge(nextItem.content)
             } else {
