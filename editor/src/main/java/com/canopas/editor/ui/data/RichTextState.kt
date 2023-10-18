@@ -1,5 +1,6 @@
 package com.canopas.editor.ui.data
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,10 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.substring
+import com.canopas.editor.ui.parser.json.toSpansString
+import com.canopas.editor.ui.utils.isDefault
+import com.canopas.editor.ui.utils.isHeaderStyle
 import kotlin.math.max
 import kotlin.math.min
 
@@ -122,6 +127,11 @@ class RichTextState internal constructor(
         currentStyles.clear()
         currentStyles.add(style)
 
+        if ((style.isHeaderStyle() || style.isDefault())) {
+            handleAddHeaderStyle(style)
+            updateTextFieldValue()
+            return
+        }
         if (!selection.collapsed) {
             applyStylesToSelectedText(style)
         }
@@ -132,6 +142,10 @@ class RichTextState internal constructor(
             currentStyles.add(style)
         }
 
+        if ((style.isHeaderStyle() || style.isDefault()) && selection.collapsed) {
+            handleAddHeaderStyle(style)
+            updateTextFieldValue()
+        }
         if (!selection.collapsed) {
             applyStylesToSelectedText(style)
         }
@@ -265,14 +279,42 @@ class RichTextState internal constructor(
             currentStyles.remove(style)
         }
 
-        if (!selection.collapsed)
+        if (!selection.collapsed) {
             removeStylesFromSelectedText(style)
+            updateTextFieldValue()
+        }
     }
 
-    private fun removeStylesFromSelectedText(style: SpanStyle) {
-        if (textFieldValue.selection.collapsed) {
-            return
+    private fun removeStylesFromSelectedText(fromIndex: Int, toIndex: Int) {
+        val selectedParts = spans.filter { part ->
+            part.from < toIndex && part.to >= fromIndex
         }
+
+        selectedParts.forEach { part ->
+            val index = spans.indexOf(part)
+            if (index !in spans.indices) return@forEach
+
+            if (part.from < fromIndex && part.to >= toIndex) {
+                spans[index] = part.copy(to = fromIndex - 1)
+                spans.add(
+                    index + 1,
+                    part.copy(
+                        from = toIndex,
+                    )
+                )
+            } else if (part.from < fromIndex) {
+                spans[index] = part.copy(
+                    to = fromIndex - 1
+                )
+            } else {
+                spans.removeAt(index)
+            }
+        }
+
+    }
+
+
+    private fun removeStylesFromSelectedText(style: SpanStyle) {
 
         val fromIndex = textFieldValue.selection.min
         val toIndex = textFieldValue.selection.max
@@ -303,7 +345,7 @@ class RichTextState internal constructor(
                 spans.removeAt(index)
             }
         }
-        updateTextFieldValue()
+
     }
 
     fun onTextFieldValueChange(newTextFieldValue: TextFieldValue) {
@@ -329,13 +371,41 @@ class RichTextState internal constructor(
         }
     }
 
+    private fun handleAddHeaderStyle(style: SpanStyle, textField: TextFieldValue = textFieldValue) {
+        val text = textField.text
+
+        val fromIndex = textField.selection.min
+        val toIndex =
+            if (textField.selection.collapsed) fromIndex else textField.selection.max
+
+
+        val startIndex: Int = max(0, text.lastIndexOf("\n", fromIndex - 1))
+        var endIndex: Int = text.indexOf("\n", toIndex)
+
+        if (endIndex == -1) endIndex = text.length - 1
+
+        removeStylesFromSelectedText(startIndex, endIndex)
+
+        spans.add(
+            RichTextSpan(
+                from = startIndex,
+                to = endIndex,
+                style = style
+            )
+        )
+    }
+
     private fun handleAddingCharacters(newValue: TextFieldValue) {
         val typedChars = newValue.text.length - textFieldValue.text.length
         val startTypeIndex = newValue.selection.min - typedChars
 
+        if (newValue.text.getOrNull(startTypeIndex) == '\n') {
+            removeTitleStylesIfAny()
+        }
+        val selectedStyles = currentStyles.toMutableList()
+
         moveSpans(startTypeIndex, typedChars)
 
-        val selectedStyles = currentStyles.toMutableList()
         val startParts = spans.filter { startTypeIndex - 1 in it.from..it.to }
         val endParts = spans.filter { startTypeIndex in it.from..it.to }
         val commonParts = startParts.intersect(endParts.toSet())
@@ -362,6 +432,12 @@ class RichTextState internal constructor(
                     style = it
                 )
             )
+        }
+    }
+
+    private fun removeTitleStylesIfAny() {
+        if (currentStyles.any { it.isHeaderStyle() }) {
+            currentStyles.clear()
         }
     }
 
@@ -429,10 +505,22 @@ class RichTextState internal constructor(
     private fun handleRemovingCharacters(
         newTextFieldValue: TextFieldValue
     ) {
-        val removedChars = textFieldValue.text.length - newTextFieldValue.text.length
-        val startRemoveIndex = newTextFieldValue.selection.min + removedChars
+        val removedCharsCount = textFieldValue.text.length - newTextFieldValue.text.length
+        val startRemoveIndex = newTextFieldValue.selection.min + removedCharsCount
         val endRemoveIndex = newTextFieldValue.selection.min
         val removeRange = endRemoveIndex until startRemoveIndex
+
+        val newLineIndex = textFieldValue.text.substring(
+            endRemoveIndex,
+            startRemoveIndex
+        ).indexOf("\n")
+
+        if (currentStyles.any { it.isHeaderStyle() } && newLineIndex != -1) {
+            val style = currentStyles.first { it.isHeaderStyle() }
+            handleAddHeaderStyle(style, newTextFieldValue)
+            updateTextFieldValue(newTextFieldValue)
+            return
+        }
 
         val iterator = spans.iterator()
 
@@ -444,8 +532,8 @@ class RichTextState internal constructor(
 
             if (removeRange.last < part.from) {
                 partsCopy[index] = part.copy(
-                    from = part.from - removedChars,
-                    to = part.to - removedChars
+                    from = part.from - removedCharsCount,
+                    to = part.to - removedCharsCount
                 )
             } else if (removeRange.first <= part.from && removeRange.last >= part.to) {
                 // Remove the element from the copy.
@@ -453,10 +541,10 @@ class RichTextState internal constructor(
             } else if (removeRange.first <= part.from) {
                 partsCopy[index] = part.copy(
                     from = max(0, removeRange.first),
-                    to = min(newTextFieldValue.text.length, part.to - removedChars)
+                    to = min(newTextFieldValue.text.length, part.to - removedCharsCount)
                 )
             } else if (removeRange.last <= part.to) {
-                partsCopy[index] = part.copy(to = part.to - removedChars)
+                partsCopy[index] = part.copy(to = part.to - removedCharsCount)
             } else if (removeRange.first < part.to) {
                 partsCopy[index] = part.copy(to = removeRange.first)
             }
@@ -480,11 +568,6 @@ class RichTextState internal constructor(
             part.from < toIndex && part.to >= fromIndex
         }
 
-//        if(selectedParts.isEmpty()){
-//            currentStyles.first {
-//
-//            }
-//        }
         selectedParts.forEach { part ->
             val index = spans.indexOf(part)
             if (index !in spans.indices) return@forEach

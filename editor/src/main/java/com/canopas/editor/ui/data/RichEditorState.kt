@@ -212,4 +212,9 @@ class RichEditorState internal constructor(
         return JsonEditorParser.decode(this)
     }
 
+    fun reset() {
+        setContent(emptyList())
+        focusedAttributeIndexState = 0
+    }
+
 }
