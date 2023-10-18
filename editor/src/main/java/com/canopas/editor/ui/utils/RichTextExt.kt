@@ -2,7 +2,7 @@ package com.canopas.editor.ui.utils
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import com.canopas.editor.ui.data.RichTextPart
+import com.canopas.editor.ui.data.RichTextSpan
 import com.canopas.editor.ui.data.RichTextState
 
 
@@ -27,30 +27,30 @@ fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState>
 }
 
 private fun removeParts(
-    originalList: List<RichTextPart>,
+    originalList: List<RichTextSpan>,
     cursorPosition: Int
-): List<RichTextPart> {
-    return originalList.filter { it.fromIndex <= cursorPosition - 1 }
-        .map { textPart ->
-            val updatedFromIndex = textPart.fromIndex
+): List<RichTextSpan> {
+    return originalList.filter { it.from <= cursorPosition - 1 }
+        .map { span ->
+            val updatedFromIndex = span.from
             val updatedToIndex =
-                if (cursorPosition > textPart.toIndex) textPart.toIndex else cursorPosition - 1
-            RichTextPart(updatedFromIndex, updatedToIndex, textPart.spanStyle)
+                if (cursorPosition > span.to) span.to else cursorPosition - 1
+            RichTextSpan(updatedFromIndex, updatedToIndex, span.style)
         }
 }
 
 
 private fun forwardParts(
-    originalList: List<RichTextPart>,
+    originalList: List<RichTextSpan>,
     cursorPosition: Int
-): List<RichTextPart> {
-    return originalList.filter { it.toIndex >= cursorPosition }
-        .map { textPart ->
+): List<RichTextSpan> {
+    return originalList.filter { it.to >= cursorPosition }
+        .map { span ->
             val updatedFromIndex =
-                if (cursorPosition >= textPart.fromIndex) 0 else textPart.fromIndex - cursorPosition
+                if (cursorPosition >= span.from) 0 else span.from - cursorPosition
             val updatedToIndex =
-                textPart.toIndex - cursorPosition
-            RichTextPart(updatedFromIndex, updatedToIndex, textPart.spanStyle)
+                span.to - cursorPosition
+            RichTextSpan(updatedFromIndex, updatedToIndex, span.style)
         }
 }
 

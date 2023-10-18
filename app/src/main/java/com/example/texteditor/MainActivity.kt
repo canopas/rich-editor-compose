@@ -21,8 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -42,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.ui.RichEditor
 import com.canopas.editor.ui.ui.rememberEditorState
@@ -56,10 +57,6 @@ import com.canopas.editor.ui.utils.H6SPanStyle
 import com.canopas.editor.ui.utils.ItalicSpanStyle
 import com.canopas.editor.ui.utils.UnderlineSpanStyle
 import com.example.texteditor.ui.theme.TextEditorTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,35 +143,12 @@ fun StyleContainer(
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
-                Log.d("XXX", "Json ${state.toJson()} ")
-
+                // Log.d("XXX", "Json ${state.toJson()} "
+                state.reset()
             },
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_save), contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            modifier = Modifier
-                .padding(2.dp)
-                .size(48.dp),
-            onClick = {
-                var json = state.toJson()
-                state.setJson("")
-                scope.launch {
-                    delay(5000)
-                    withContext(Dispatchers.Main) {
-                        Log.d("XXX", "Json ${json} ")
-                        state.setJson(json)
-                    }
-                }
-
-            },
-        ) {
-            Icon(
-                Icons.Default.Add, contentDescription = null,
+                Icons.Default.Refresh, contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -189,7 +163,7 @@ fun TitleStyleButton(
     var expanded by remember { mutableStateOf(false) }
 
     val onItemSelected = { style: SpanStyle ->
-        value.toggleStyle(style)
+        value.updateStyle(style)
         expanded = false
     }
 
@@ -212,7 +186,8 @@ fun TitleStyleButton(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.wrapContentSize()
+            modifier = Modifier.wrapContentSize(),
+            properties = PopupProperties(false)
         ) {
 
             DropDownItem(text = "Text",
