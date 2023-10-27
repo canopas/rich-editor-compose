@@ -228,22 +228,22 @@ internal fun TextFieldComponent(
     onFocusChange: (Boolean) -> Unit,
     onFocusUp: () -> Unit
 ) {
-    val focusRequester = remember { FocusRequester() }
+    //val focusRequester = remember { FocusRequester() }
     var previousFocusState by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = isFocused, block = {
-        if (isFocused) {
-            focusRequester.requestFocus()
-        } else {
-            focusRequester.freeFocus()
-        }
-    })
+//    LaunchedEffect(key1 = isFocused, block = {
+//        if (isFocused) {
+//            focusRequester.requestFocus()
+//        } else {
+//            focusRequester.freeFocus()
+//        }
+//    })
 
     RichTextField(
         value = attribute.content,
         modifier = Modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester)
+            // .focusRequester(focusRequester)
             .onFocusChanged {
                 if (previousFocusState != it.isFocused) {
                     onFocusChange(it.isFocused)

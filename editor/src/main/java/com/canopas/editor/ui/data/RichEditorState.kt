@@ -4,11 +4,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.SpanStyle
 import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
 import com.canopas.editor.ui.parser.json.JsonEditorParser
+import com.canopas.editor.ui.utils.TextSpanStyle
 import com.canopas.editor.ui.utils.split
 
 @Immutable
@@ -42,7 +42,7 @@ class RichEditorState internal constructor(
         }
     }
 
-    internal fun update(value: EditorAttribute, index: Int) {
+    private fun update(value: EditorAttribute, index: Int) {
         if (index != -1 && index < attributes.size) {
             attributes[index] = value
         }
@@ -74,7 +74,7 @@ class RichEditorState internal constructor(
         else if (focusedAttributeIndex == index) focusedAttributeIndexState = -1
     }
 
-    fun hasStyle(style: SpanStyle): Boolean {
+    fun hasStyle(style: TextSpanStyle): Boolean {
         return attributes.filterIndexed { index, value ->
             focusedAttributeIndex == index && value.type == TYPE_TEXT
         }.any { (it as TextAttribute).content.hasStyle(style) }
@@ -83,7 +83,7 @@ class RichEditorState internal constructor(
     private fun getRichTexts(): List<TextAttribute> =
         attributes.filter { it.type == TYPE_TEXT }.map { it as TextAttribute }
 
-    fun toggleStyle(style: SpanStyle): RichEditorState {
+    fun toggleStyle(style: TextSpanStyle): RichEditorState {
         attributes.forEach { value ->
             if (value.type == TYPE_TEXT) {
                 ((value as TextAttribute)).content.toggleStyle(style)
@@ -93,7 +93,7 @@ class RichEditorState internal constructor(
         return this
     }
 
-    fun updateStyle(style: SpanStyle): RichEditorState {
+    fun updateStyle(style: TextSpanStyle): RichEditorState {
         attributes.forEach { value ->
             if (value.type == TYPE_TEXT) {
                 ((value as TextAttribute)).content.updateStyle(style)

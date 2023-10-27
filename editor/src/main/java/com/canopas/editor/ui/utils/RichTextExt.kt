@@ -1,7 +1,6 @@
 package com.canopas.editor.ui.utils
 
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import com.canopas.editor.ui.data.RichTextSpan
 import com.canopas.editor.ui.data.RichTextState
 
@@ -10,14 +9,14 @@ fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState>
     if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
 
     val copyParts = ArrayList(spans)
-    val subtext1 = text.substring(0, cursorPosition)
-    val subtext2 = text.substring(cursorPosition)
+    val subtext1 = editable.substring(0, cursorPosition)
+    val subtext2 = editable.substring(cursorPosition)
     val textParts1 = removeParts(spans, cursorPosition).toMutableList()
 
     this.spans.clear()
     this.spans.addAll(textParts1)
-    val textFieldValue = TextFieldValue(subtext1, selection = TextRange(subtext1.length))
-    this.updateTextFieldValue(textFieldValue)
+    this.updateText()
+    this.adjustSelection(TextRange(subtext1.length))
 
 
     val newList = forwardParts(copyParts, cursorPosition).toMutableList()

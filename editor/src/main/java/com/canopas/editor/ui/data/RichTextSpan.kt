@@ -1,9 +1,9 @@
 package com.canopas.editor.ui.data
 
-import androidx.compose.ui.text.SpanStyle
+import com.canopas.editor.ui.utils.TextSpanStyle
 
 data class RichTextSpan(
     val from: Int,
     val to: Int,
-    val style: SpanStyle,
+    val style: TextSpanStyle,
 )

@@ -21,8 +21,8 @@ sealed interface EditorAttribute {
         val content: RichTextState = RichTextState(), override val type: String = TYPE_TEXT,
     ) : EditorAttribute {
 
-        val isEmpty get() = content.text.isEmpty()
+        val isEmpty get() = content.editable.isEmpty()
 
-        val selection get() = content.textFieldValue.selection
+        val selection get() = content.selection
     }
 }

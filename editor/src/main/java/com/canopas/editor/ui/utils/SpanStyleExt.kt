@@ -70,18 +70,18 @@ internal fun SpanStyle.contains(other: SpanStyle? = null): Boolean {
     return true
 }
 
-fun SpanStyle.isDefault(): Boolean {
-    return this == DefaultSpanStyle
+fun TextSpanStyle.isDefault(): Boolean {
+    return this == TextSpanStyle.Default
 }
 
-fun SpanStyle.isHeaderStyle(): Boolean {
+fun TextSpanStyle.isHeaderStyle(): Boolean {
     val headers = listOf(
-        H1SPanStyle,
-        H2SPanStyle,
-        H3SPanStyle,
-        H4SPanStyle,
-        H5SPanStyle,
-        H6SPanStyle,
+        TextSpanStyle.H1Style,
+        TextSpanStyle.H2Style,
+        TextSpanStyle.H3Style,
+        TextSpanStyle.H4Style,
+        TextSpanStyle.H5Style,
+        TextSpanStyle.H6Style,
     )
 
     return headers.contains(this)
