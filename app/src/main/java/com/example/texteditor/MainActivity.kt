@@ -42,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.canopas.editor.ui.data.RichEditorState
+import com.canopas.editor.ui.data.RichTextState
 import com.canopas.editor.ui.ui.RichEditor
 import com.canopas.editor.ui.ui.rememberEditorState
 import com.canopas.editor.ui.utils.TextSpanStyle
@@ -79,8 +80,7 @@ fun Sample() {
                     .fillMaxWidth()
                     .weight(1f)
                     .border(1.dp, Color.Gray)
-                    .padding(5.dp),
-                embeddedErrorPlaceHolder = painterResource(id = com.canopas.editor.R.drawable.ic_error_placeholder)
+                    .padding(5.dp)
             )
         }
     }
@@ -89,7 +89,7 @@ fun Sample() {
 
 @Composable
 fun StyleContainer(
-    state: RichEditorState,
+    state: RichTextState,
 ) {
     val scope = rememberCoroutineScope()
     Row(
@@ -147,7 +147,7 @@ fun StyleContainer(
 
 @Composable
 fun TitleStyleButton(
-    value: RichEditorState
+    value: RichTextState
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -279,7 +279,7 @@ fun VideoPicker(value: RichEditorState) {
 fun StyleButton(
     @DrawableRes icon: Int,
     style: TextSpanStyle,
-    value: RichEditorState,
+    value: RichTextState,
 ) {
     IconButton(
         modifier = Modifier

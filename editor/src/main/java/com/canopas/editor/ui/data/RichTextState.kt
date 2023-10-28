@@ -7,6 +7,7 @@ import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.TextRange
+import com.canopas.editor.ui.parser.json.JsonEditorParser
 import com.canopas.editor.ui.utils.TextSpanStyle
 import com.canopas.editor.ui.utils.isDefault
 import com.canopas.editor.ui.utils.isHeaderStyle
@@ -593,5 +594,27 @@ class RichTextState internal constructor(
     }
 
     fun hasStyle(style: TextSpanStyle) = currentStyles.contains(style)
+
+    fun reset() {
+        spans.clear()
+        this.rawText = ""
+        this.editable.clear()
+    }
+
+    fun setJson(json: String) {
+        if (json.isEmpty()) {
+            reset()
+            return
+        }
+        val state = JsonEditorParser.encode(json)
+        reset()
+        this.editable.append(state.richText)
+        this.spans.addAll(state.spans)
+    }
+
+    fun toJson(): String {
+        return JsonEditorParser.decode(this)
+    }
+
 }
 

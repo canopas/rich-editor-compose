@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import com.canopas.editor.ui.data.EditorAttribute.ImageAttribute
 import com.canopas.editor.ui.data.EditorAttribute.TextAttribute
 import com.canopas.editor.ui.data.EditorAttribute.VideoAttribute
-import com.canopas.editor.ui.parser.json.JsonEditorParser
 import com.canopas.editor.ui.utils.TextSpanStyle
 import com.canopas.editor.ui.utils.split
 
@@ -196,21 +195,6 @@ class RichEditorState internal constructor(
         }
     }
 
-
-    fun setJson(json: String) {
-        if (json.isEmpty()) {
-            clearFocus()
-            setContent(emptyList())
-            return
-        }
-        val state = JsonEditorParser.encode(json)
-        setContent(state.attributes)
-        setFocused(state.attributes.lastIndex, true)
-    }
-
-    fun toJson(): String {
-        return JsonEditorParser.decode(this)
-    }
 
     fun reset() {
         setContent(emptyList())
