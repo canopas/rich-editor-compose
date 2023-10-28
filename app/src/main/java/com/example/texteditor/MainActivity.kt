@@ -119,13 +119,13 @@ fun StyleContainer(
             value = state,
         )
 
-        ImagePicker(
-            value = state,
-        )
-
-        VideoPicker(
-            value = state,
-        )
+//        ImagePicker(
+//            value = state,
+//        )
+//
+//        VideoPicker(
+//            value = state,
+//        )
 
         IconButton(
             modifier = Modifier
