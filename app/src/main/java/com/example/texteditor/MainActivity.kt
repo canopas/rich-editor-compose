@@ -2,10 +2,7 @@ package com.example.texteditor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,7 +37,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.data.RichTextState
 import com.canopas.editor.ui.ui.RichEditor
 import com.canopas.editor.ui.ui.rememberEditorState
@@ -53,7 +48,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TextEditorTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
@@ -69,7 +63,6 @@ class MainActivity : ComponentActivity() {
 fun Sample() {
     TextEditorTheme {
         val state = rememberEditorState()
-
         Column {
 
             StyleContainer(state)
@@ -91,7 +84,6 @@ fun Sample() {
 fun StyleContainer(
     state: RichTextState,
 ) {
-    val scope = rememberCoroutineScope()
     Row(
         Modifier
             .fillMaxWidth()
@@ -119,20 +111,11 @@ fun StyleContainer(
             value = state,
         )
 
-//        ImagePicker(
-//            value = state,
-//        )
-//
-//        VideoPicker(
-//            value = state,
-//        )
-
         IconButton(
             modifier = Modifier
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
-                // Log.d("XXX", "Json ${state.toJson()} "
                 state.reset()
             },
         ) {
@@ -217,62 +200,6 @@ fun DropDownItem(
             }, shape = RoundedCornerShape(6.dp)
         )
     )
-}
-
-@Composable
-fun ImagePicker(value: RichEditorState) {
-
-    val pickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
-            // Upload image and add Url
-            uri?.let { value.addImage(it.toString()) }
-        }
-    )
-
-    IconButton(
-        modifier = Modifier
-            .padding(2.dp)
-            .size(48.dp),
-        onClick = {
-            pickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-        },
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_image), contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-
-@Composable
-fun VideoPicker(value: RichEditorState) {
-
-    val pickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
-            uri?.let { value.addVideo(it.toString()) }
-        }
-    )
-
-    IconButton(
-        modifier = Modifier
-            .padding(2.dp)
-            .size(48.dp),
-        onClick = {
-            pickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
-            )
-        },
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_video), contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-    }
 }
 
 @Composable

@@ -10,30 +10,25 @@ The editor offers the following <b>options</b>:
 - [x] **Bold**
 - [x] *Italic*
 - [x] <u>Underline</u>
-- [x] Different Headings
-- [x] Text size
-- [x] Customize text span formatting
-- [x] Add Images
-- [x] Add Videos
+- [x] Different Heading
 
 ## How to use it?
+
 ```
 @Composable
 fun Sample() {
 
-        var state by rememberEditorState()
+        val state = rememberEditorState()
         RichEditor(
-            state = state,
-            onValueChange = { state = it },
-            modifier = Modifier
+                state = state,
+                modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .border(1.dp, Color.Gray)
                     .padding(5.dp)
-        )   
+            )
     
 }
-```
 
 # Demo
 [Sample](https://github.com/canopas/RichEditorCompose/tree/main/app) app demonstrates how simple the usage of the library actually is.

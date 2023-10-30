@@ -595,11 +595,12 @@ class RichTextState internal constructor(
 
     fun hasStyle(style: TextSpanStyle) = currentStyles.contains(style)
 
-    fun reset() {
-        spans.clear()
-        this.rawText = ""
-        this.editable.clear()
-    }
+     fun reset() {
+         spans.clear()
+         this.rawText = ""
+         this.editable.clear()
+         updateText()
+     }
 
     fun setJson(json: String) {
         if (json.isEmpty()) {
@@ -610,6 +611,7 @@ class RichTextState internal constructor(
         reset()
         this.editable.append(state.richText)
         this.spans.addAll(state.spans)
+        updateText()
     }
 
     fun toJson(): String {
