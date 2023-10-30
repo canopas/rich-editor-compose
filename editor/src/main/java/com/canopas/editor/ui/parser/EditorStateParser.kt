@@ -1,11 +1,11 @@
 package com.canopas.editor.ui.parser
 
-import com.canopas.editor.ui.data.RichEditorState
+import com.canopas.editor.ui.data.RichTextState
 
 internal interface EditorParser<T> {
 
-    fun encode(input: T): RichEditorState
+    fun encode(input: T): RichTextState
 
-    fun decode(editorValue: RichEditorState): T
+    fun decode(editorValue: RichTextState): T
 
 }
