@@ -29,7 +29,7 @@ fun Sample() {
             )
     
 }
-
+```
 # Demo
 [Sample](https://github.com/canopas/RichEditorCompose/tree/main/app) app demonstrates how simple the usage of the library actually is.
 
