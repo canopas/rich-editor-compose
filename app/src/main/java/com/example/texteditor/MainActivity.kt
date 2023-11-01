@@ -37,7 +37,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.canopas.editor.ui.data.RichTextState
+import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.ui.RichEditor
 import com.canopas.editor.ui.ui.rememberEditorState
 import com.canopas.editor.ui.utils.TextSpanStyle
@@ -82,7 +82,7 @@ fun Sample() {
 
 @Composable
 fun StyleContainer(
-    state: RichTextState,
+    state: RichEditorState,
 ) {
     Row(
         Modifier
@@ -130,7 +130,7 @@ fun StyleContainer(
 
 @Composable
 fun TitleStyleButton(
-    value: RichTextState
+    value: RichEditorState
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -206,7 +206,7 @@ fun DropDownItem(
 fun StyleButton(
     @DrawableRes icon: Int,
     style: TextSpanStyle,
-    value: RichTextState,
+    value: RichEditorState,
 ) {
     IconButton(
         modifier = Modifier

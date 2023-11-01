@@ -1,11 +1,11 @@
 package com.canopas.editor.ui.utils
 
 import androidx.compose.ui.text.TextRange
+import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.data.RichTextSpan
-import com.canopas.editor.ui.data.RichTextState
 
 
-fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState> {
+fun RichEditorState.split(cursorPosition: Int): Pair<RichEditorState, RichEditorState> {
     if (cursorPosition == -1) throw RuntimeException("cursorPosition should be >= 0")
 
     val copyParts = ArrayList(spans)
@@ -21,7 +21,7 @@ fun RichTextState.split(cursorPosition: Int): Pair<RichTextState, RichTextState>
 
     val newList = forwardParts(copyParts, cursorPosition).toMutableList()
     val textValue2 =
-        RichTextState(richText = subtext2, spans = newList)
+        RichEditorState(richText = subtext2, spans = newList)
     return Pair(this, textValue2)
 }
 

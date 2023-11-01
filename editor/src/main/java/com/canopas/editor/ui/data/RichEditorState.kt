@@ -14,16 +14,14 @@ import com.canopas.editor.ui.utils.isHeaderStyle
 import kotlin.math.max
 import kotlin.math.min
 
-class RichTextState internal constructor(
+class RichEditorState internal constructor(
     val richText: String = "",
     val spans: MutableList<RichTextSpan> = mutableListOf()
 ) {
 
     internal var editable: Editable = Editable.Factory().newEditable(richText)
         private set
-    internal var selection = TextRange(0, 0)
-        private set
-
+    private var selection = TextRange(0, 0)
     private val currentStyles = mutableStateListOf<TextSpanStyle>()
     private var rawText: String = richText
 
@@ -582,15 +580,6 @@ class RichTextState internal constructor(
         // Replace the original parts with the modified copy
         spans.clear()
         spans.addAll(partsCopy)
-    }
-
-    internal fun merge(nextItem: RichTextState) {
-        val text = this.rawText + "\n" + nextItem.rawText
-        val existingParts = ArrayList(this.spans)
-        this.spans.addAll(nextItem.spans)
-        forwardParts(existingParts.size, this.spans.size, this.editable.length + 1)
-        adjustSelection(TextRange(text.length))
-        updateText()
     }
 
     fun hasStyle(style: TextSpanStyle) = currentStyles.contains(style)

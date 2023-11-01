@@ -1,7 +1,7 @@
 package com.canopas.editor.ui.parser.json
 
+import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.data.RichTextSpan
-import com.canopas.editor.ui.data.RichTextState
 import com.canopas.editor.ui.utils.TextSpanStyle
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
@@ -13,9 +13,9 @@ import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
-class RichTextStateAdapter : JsonSerializer<RichTextState>, JsonDeserializer<RichTextState> {
+class RichTextStateAdapter : JsonSerializer<RichEditorState>, JsonDeserializer<RichEditorState> {
     override fun serialize(
-        src: RichTextState?,
+        src: RichEditorState?,
         typeOfSrc: Type?,
         context: JsonSerializationContext?
     ): JsonElement {
@@ -29,14 +29,14 @@ class RichTextStateAdapter : JsonSerializer<RichTextState>, JsonDeserializer<Ric
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): RichTextState {
+    ): RichEditorState {
         val jsonObject = json?.asJsonObject ?: throw JsonParseException("Invalid JSON")
         val text = jsonObject.get("text").asString
         val parts = context?.deserialize<MutableList<RichTextSpan>>(
             jsonObject.get("spans"),
             object : TypeToken<MutableList<RichTextSpan>>() {}.type
         )
-        return RichTextState(text, parts ?: mutableListOf())
+        return RichEditorState(text, parts ?: mutableListOf())
     }
 }
 
