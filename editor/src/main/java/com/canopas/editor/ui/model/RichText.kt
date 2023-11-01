@@ -1,6 +1,6 @@
-package com.canopas.editor.ui.data
+package com.canopas.editor.ui.model
 
 data class RichText(
-    val richText: String = "",
+    val text: String = "",
     val spans: MutableList<RichTextSpan> = mutableListOf()
 )

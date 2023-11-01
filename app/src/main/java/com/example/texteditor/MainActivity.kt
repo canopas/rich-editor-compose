@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.ui.RichEditor
-import com.canopas.editor.ui.ui.rememberEditorState
 import com.canopas.editor.ui.utils.TextSpanStyle
+import com.example.texteditor.parser.JsonEditorParser
 import com.example.texteditor.ui.theme.TextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,7 +62,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Sample() {
     TextEditorTheme {
-        val state = rememberEditorState()
+        val state = remember {
+            RichEditorState.Builder()
+                .setInput("")
+                .adapter(JsonEditorParser())
+                .build()
+        }
+
         Column {
 
             StyleContainer(state)

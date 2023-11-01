@@ -1,4 +1,4 @@
-package com.canopas.editor.ui.data
+package com.canopas.editor.ui.model
 
 import com.canopas.editor.ui.utils.TextSpanStyle
 

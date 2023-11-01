@@ -21,6 +21,7 @@ fun RichEditor(
     state: RichEditorState,
     modifier: Modifier = Modifier,
 ) {
+
     Box(modifier = modifier) {
         val context = LocalContext.current
         val editText = remember {
@@ -40,7 +41,7 @@ fun RichEditor(
                 override fun sendAccessibilityEvent(host: View, eventType: Int) {
                     super.sendAccessibilityEvent(host, eventType)
                     if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
-                        state.adjustSelection(
+                        state.manager.adjustSelection(
                             TextRange(editText.selectionStart, editText.selectionEnd)
                         )
                     }
@@ -49,20 +50,15 @@ fun RichEditor(
 
             editText.doAfterTextChanged { editable ->
                 editable?.let {
-                    state.onTextFieldValueChange(
+                    state.manager.onTextFieldValueChange(
                         it, TextRange(editText.selectionStart, editText.selectionEnd)
                     )
                 }
             }
 
-            state.setEditable(editText.text)
-            state.adjustSelection(TextRange(editText.selectionStart, editText.selectionEnd))
+            state.manager.setEditable(editText.text)
+            state.manager.adjustSelection(TextRange(editText.selectionStart, editText.selectionEnd))
             editText
         })
     }
-}
-
-@Composable
-fun rememberEditorState(): RichEditorState {
-    return remember { RichEditorState() }
 }
