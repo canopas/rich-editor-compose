@@ -1,4 +1,4 @@
-package com.canopas.editor.ui.parser.json
+package com.example.texteditor.parser
 
 import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.data.RichTextSpan

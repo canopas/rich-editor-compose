@@ -1,4 +1,4 @@
-package com.canopas.editor.ui.parser.json
+package com.example.texteditor.parser
 
 import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.data.RichTextSpan
@@ -20,7 +20,7 @@ class RichTextStateAdapter : JsonSerializer<RichEditorState>, JsonDeserializer<R
         context: JsonSerializationContext?
     ): JsonElement {
         val jsonObject = JsonObject()
-        jsonObject.addProperty("text", src?.editable.toString())
+        jsonObject.addProperty("text", src?.editableText.toString())
         jsonObject.add("spans", context?.serialize(src?.spans))
         return jsonObject
     }

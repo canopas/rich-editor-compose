@@ -7,14 +7,14 @@ import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.TextRange
-import com.canopas.editor.ui.parser.json.JsonEditorParser
+
 import com.canopas.editor.ui.utils.TextSpanStyle
 import com.canopas.editor.ui.utils.isDefault
 import com.canopas.editor.ui.utils.isHeaderStyle
 import kotlin.math.max
 import kotlin.math.min
 
-class RichEditorState internal constructor(
+class RichEditorState constructor(
     val richText: String = "",
     val spans: MutableList<RichTextSpan> = mutableListOf()
 ) {
@@ -24,6 +24,8 @@ class RichEditorState internal constructor(
     private var selection = TextRange(0, 0)
     private val currentStyles = mutableStateListOf<TextSpanStyle>()
     private var rawText: String = richText
+    val editableText: String
+        get() = editable.toString()
 
     init {
         updateText()
@@ -584,28 +586,28 @@ class RichEditorState internal constructor(
 
     fun hasStyle(style: TextSpanStyle) = currentStyles.contains(style)
 
-     fun reset() {
-         spans.clear()
-         this.rawText = ""
-         this.editable.clear()
-         updateText()
-     }
-
-    fun setJson(json: String) {
-        if (json.isEmpty()) {
-            reset()
-            return
-        }
-        val state = JsonEditorParser.encode(json)
-        reset()
-        this.editable.append(state.richText)
-        this.spans.addAll(state.spans)
+    fun reset() {
+        spans.clear()
+        this.rawText = ""
+        this.editable.clear()
         updateText()
     }
 
-    fun toJson(): String {
-        return JsonEditorParser.decode(this)
-    }
+//    fun setJson(json: String) {
+//        if (json.isEmpty()) {
+//            reset()
+//            return
+//        }
+//        val state = com.example.texteditor.parser.JsonEditorParser.encode(json)
+//        reset()
+//        this.editable.append(state.richText)
+//        this.spans.addAll(state.spans)
+//        updateText()
+//    }
+//
+//    fun toJson(): String {
+//        return com.example.texteditor.parser.JsonEditorParser.decode(this)
+//    }
 
 }
 

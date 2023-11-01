@@ -2,7 +2,7 @@ package com.canopas.editor.ui.parser
 
 import com.canopas.editor.ui.data.RichEditorState
 
-internal interface EditorParser<String> {
+interface EditorParser<String> {
 
     fun encode(input: String): RichEditorState
 
