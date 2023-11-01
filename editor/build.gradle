@@ -3,6 +3,13 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+ext {
+    PUBLISH_GROUP_ID = 'com.canopas.editor'
+    PUBLISH_VERSION = '1.0.0'
+    PUBLISH_ARTIFACT_ID = 'rich-editor-compose'
+}
+apply from: "${rootDir}/scripts/publish-module.gradle"
+
 android {
     namespace 'com.canopas.editor'
     compileSdk 34
@@ -40,6 +47,11 @@ android {
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
         }
     }
 }
