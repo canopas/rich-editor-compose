@@ -1,6 +1,7 @@
 package com.example.texteditor
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
@@ -122,7 +123,8 @@ fun StyleContainer(
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
-                state.reset()
+                Log.d("XXX", "json ${state.clone()}")
+                // state.reset()
             },
         ) {
             Icon(

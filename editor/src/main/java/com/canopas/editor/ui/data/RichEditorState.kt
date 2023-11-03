@@ -16,8 +16,8 @@ class RichEditorState internal constructor(
         manager = RichTextManager(getRichText())
     }
 
-    fun getRichText(): RichText {
-        return adapter.encode(input)
+    private fun getRichText(): RichText {
+        return if (input.isNotEmpty()) adapter.encode(input) else RichText()
     }
 
     fun clone(): String {
@@ -35,7 +35,7 @@ class RichEditorState internal constructor(
     }
 
     fun updateStyle(style: TextSpanStyle) {
-        manager.updateStyle(style)
+        manager.setStyle(style)
     }
 
     class Builder {

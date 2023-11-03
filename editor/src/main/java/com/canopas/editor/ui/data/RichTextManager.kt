@@ -5,12 +5,12 @@ import android.text.Spannable
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.TextRange
 import com.canopas.editor.ui.model.RichText
 import com.canopas.editor.ui.model.RichTextSpan
 import com.canopas.editor.ui.utils.TextSpanStyle
-import com.canopas.editor.ui.utils.removeSpans
 import kotlin.math.max
 import kotlin.math.min
 
@@ -101,44 +101,16 @@ class RichTextManager(richText: RichText) {
         }
 
         if (!selection.collapsed) {
-            removeStylesFromSelectedText(style)
+            val fromIndex = selection.min
+            val toIndex = selection.max
+
+            val selectedParts = spans.filter { part ->
+                part.from < toIndex && part.to >= fromIndex && part.style == style
+            }
+            removeStylesFromSelectedPart(selectedParts, fromIndex, toIndex)
             updateText()
         }
     }
-
-    private fun removeStylesFromSelectedText(style: TextSpanStyle) {
-        val fromIndex = selection.min
-        val toIndex = selection.max
-
-        val selectedParts = spans.filter { part ->
-            part.from < toIndex && part.to >= fromIndex && part.style == style
-        }
-
-        selectedParts.forEach { part ->
-            val index = spans.indexOf(part)
-            if (index !in spans.indices) return@forEach
-
-            if (part.from < fromIndex && part.to >= toIndex) {
-                spans[index] = part.copy(to = fromIndex - 1)
-                spans.add(
-                    index + 1,
-                    part.copy(
-                        from = toIndex,
-                    )
-                )
-            } else if (part.from < fromIndex) {
-                spans[index] = part.copy(
-                    to = fromIndex - 1
-                )
-            } else if (part.to >= toIndex) {
-                spans[index] = part.copy(from = toIndex)
-            } else {
-                spans.removeAt(index)
-            }
-        }
-
-    }
-
 
     private fun addStyle(style: TextSpanStyle) {
         if (!currentStyles.contains(style)) {
@@ -159,14 +131,18 @@ class RichTextManager(richText: RichText) {
         style: TextSpanStyle,
         text: String = rawText
     ) {
+        if (text.isEmpty()) return
         val fromIndex = selection.min
         val toIndex = if (selection.collapsed) fromIndex else selection.max
-
         val startIndex: Int = max(0, text.lastIndexOf("\n", fromIndex - 1))
         var endIndex: Int = text.indexOf("\n", toIndex)
 
         if (endIndex == -1) endIndex = text.length - 1
-        removeStylesFromSelectedText(startIndex, endIndex)
+        val selectedParts = spans.filter { part ->
+            part.from < toIndex && part.to >= fromIndex && part.style.isHeaderStyle()
+        }
+
+        removeStylesFromSelectedPart(selectedParts, startIndex, endIndex)
 
         spans.add(
             RichTextSpan(
@@ -177,30 +153,60 @@ class RichTextManager(richText: RichText) {
         )
     }
 
-    private fun removeStylesFromSelectedText(fromIndex: Int, toIndex: Int) {
+    private fun handleRemoveHeaderStyle(
+        style: TextSpanStyle,
+        text: String = rawText
+    ) {
+        if (text.isEmpty()) return
+        val fromIndex = selection.min
+        val toIndex = if (selection.collapsed) fromIndex else selection.max
+        val startIndex: Int = max(0, text.lastIndexOf("\n", fromIndex - 1))
+        var endIndex: Int = text.indexOf("\n", toIndex)
+
+        if (endIndex == -1) endIndex = text.length - 1
         val selectedParts = spans.filter { part ->
-            part.from < toIndex && part.to >= fromIndex
+            part.from < toIndex && part.to >= fromIndex && part.style.isHeaderStyle()
         }
 
+        removeStylesFromSelectedPart(selectedParts, startIndex, endIndex)
+    }
+
+
+    private fun removeStylesFromSelectedPart(
+        selectedParts: List<RichTextSpan>,
+        fromIndex: Int, toIndex: Int
+    ) {
+        Log.d("XXX", "removeStylesFromSelectedPart start $fromIndex end $toIndex")
+
         selectedParts.forEach { part ->
+            Log.d("XXX", "select part ${part.print()}")
+
             val index = spans.indexOf(part)
             if (index !in spans.indices) return@forEach
 
             if (part.from < fromIndex && part.to >= toIndex) {
+                Log.d("XXXX", "1st case")
                 spans[index] = part.copy(to = fromIndex - 1)
                 spans.add(index + 1, part.copy(from = toIndex))
             } else if (part.from < fromIndex) {
                 spans[index] = part.copy(to = fromIndex - 1)
+                Log.d("XXXX", "2nd case")
+
+            } else if (part.to > toIndex) {
+                spans[index] = part.copy(from = toIndex)
+                Log.d("XXXX", "3rd case")
+
             } else {
                 spans.removeAt(index)
+                Log.d("XXXX", "else case")
+
             }
         }
+
     }
 
     private fun applyStylesToSelectedText(style: TextSpanStyle) {
-        if (selection.collapsed) {
-            return
-        }
+        if (selection.collapsed) return
 
         val fromIndex = selection.min
         val toIndex = selection.max
@@ -221,68 +227,30 @@ class RichTextManager(richText: RichText) {
             spans[partIndex] = part.copy(from = index)
         }
 
+        if (startParts.isEmpty() && endParts.isEmpty() && selectedParts.isNotEmpty()) {
+            spans.add(RichTextSpan(from = fromIndex, to = toIndex - 1, style = style))
+            Log.d("XXX", "1st case")
+        } else if (style in startParts.map { it.style }) {
+            startParts.filter { it.style == style }.forEach { updateToIndex(it, toIndex - 1) }
+            Log.d("XXX", "3rd case")
 
-        val addPart: () -> Unit = {
-            spans.add(
-                RichTextSpan(
-                    from = fromIndex,
-                    to = toIndex - 1,
-                    style = style
-                )
-            )
-        }
-        if (selectedParts.isEmpty()) {
-            when {
-                (startParts.isNotEmpty() && endParts.isNotEmpty()) && startParts == endParts -> {
-                    startParts.forEach { part ->
-                        updateToIndex(part, toIndex - 1)
-                    }
-                }
-
-                style in startParts.map { it.style } -> {
-                    val parts = startParts.filter { it.style == style }
-                    parts.forEach { part ->
-                        updateToIndex(part, toIndex - 1)
-                    }
-                }
-
-                style in endParts.map { it.style } -> {
-                    val parts = endParts.filter { it.style == style }
-                    parts.forEach { part ->
-                        updateFromIndex(part, fromIndex)
-                    }
-                }
-
-                else -> {
-                    addPart()
-                }
-            }
+        } else if (style in endParts.map { it.style }) {
+            endParts.filter { it.style == style }
+                .forEach { part -> updateFromIndex(part, fromIndex) }
+            Log.d("XXX", "4th case")
         } else {
-            if (startParts.isEmpty() && endParts.isEmpty()) {
-                addPart()
-            } else if (startParts.isNotEmpty() && endParts.isNotEmpty() && startParts == endParts) {
-                startParts.forEach { part ->
-                    updateToIndex(part, toIndex - 1)
-                }
-            } else if (style in startParts.map { it.style }) {
-                val parts = startParts.filter { it.style == style }
-                parts.forEach { part ->
-                    updateToIndex(part, toIndex - 1)
-                }
-            } else if (style in endParts.map { it.style }) {
-                val parts = endParts.filter { it.style == style }
-                parts.forEach { part ->
-                    updateFromIndex(part, fromIndex)
-                }
-            } else {
-                addPart()
-            }
+            spans.add(RichTextSpan(from = fromIndex, to = toIndex - 1, style = style))
+            Log.d("XXX", "else case")
         }
 
-        mergeSequentialParts()
+        //  mergeSequentialParts()
         updateText()
+
     }
 
+    fun logSpan(msg: String) {
+        Log.d("XXX", "$msg spans ${spans.map { it.print() }}")
+    }
 
     private fun mergeSequentialParts() {
         if (spans.isEmpty()) return
@@ -322,7 +290,7 @@ class RichTextManager(richText: RichText) {
     }
 
 
-    fun updateStyle(style: TextSpanStyle) {
+    fun setStyle(style: TextSpanStyle) {
         currentStyles.clear()
         currentStyles.add(style)
 
@@ -353,11 +321,10 @@ class RichTextManager(richText: RichText) {
         val typedChars = newValue.length - rawText.length
         val startTypeIndex = selection.min - typedChars
 
-        if (newValue.getOrNull(startTypeIndex) == '\n') {
-            if (currentStyles.any { it.isHeaderStyle() }) {
-                currentStyles.clear()
-            }
+        if (newValue.getOrNull(startTypeIndex) == '\n' && currentStyles.any { it.isHeaderStyle() }) {
+            currentStyles.clear()
         }
+
         val selectedStyles = currentStyles.toMutableList()
 
         moveSpans(startTypeIndex, typedChars)
@@ -447,7 +414,7 @@ class RichTextManager(richText: RichText) {
 
         if (currentStyles.any { it.isHeaderStyle() } && newLineIndex != -1) {
             val style = currentStyles.first { it.isHeaderStyle() }
-            handleAddHeaderStyle(style, newText.toString())
+            handleRemoveHeaderStyle(style, newText.toString())
             return
         }
 
@@ -589,5 +556,13 @@ class RichTextManager(richText: RichText) {
 
             return headers.contains(this)
         }
+
+        internal inline fun <reified T> Editable.removeSpans() {
+            val allSpans = getSpans(0, length, T::class.java)
+            for (span in allSpans) {
+                removeSpan(span)
+            }
+        }
+
     }
 }
