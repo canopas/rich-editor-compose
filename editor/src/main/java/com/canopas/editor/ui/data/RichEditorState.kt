@@ -20,7 +20,7 @@ class RichEditorState internal constructor(
         return if (input.isNotEmpty()) adapter.encode(input) else RichText()
     }
 
-    fun clone(): String {
+    fun output(): String {
         return adapter.decode(manager.richText)
     }
 
