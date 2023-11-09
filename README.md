@@ -18,7 +18,16 @@ The editor offers the following <b>options</b>:
 @Composable
 fun Sample() {
 
-        val state = rememberEditorState()
+        val context = LocalContext.current
+        
+        val state = remember {
+            val input = /* YOUR INPUT */
+            RichEditorState.Builder()
+                .setInput(input)
+                .adapter(JsonEditorParser())
+                .build()
+        }
+
         RichEditor(
                 state = state,
                 modifier = Modifier

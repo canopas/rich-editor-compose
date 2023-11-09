@@ -1,6 +1,7 @@
 package com.example.texteditor
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
@@ -18,7 +19,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -33,14 +34,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.canopas.editor.ui.data.RichTextState
+import com.canopas.editor.ui.data.RichEditorState
 import com.canopas.editor.ui.ui.RichEditor
-import com.canopas.editor.ui.ui.rememberEditorState
 import com.canopas.editor.ui.utils.TextSpanStyle
+import com.example.texteditor.parser.JsonEditorParser
 import com.example.texteditor.ui.theme.TextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,7 +64,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Sample() {
     TextEditorTheme {
-        val state = rememberEditorState()
+        val context = LocalContext.current
+
+        val state = remember {
+            val input =
+                context.assets.open("sample-data.json").bufferedReader().use { it.readText() }
+            RichEditorState.Builder()
+                .setInput(input)
+                .adapter(JsonEditorParser())
+                .build()
+        }
+
         Column {
 
             StyleContainer(state)
@@ -82,7 +94,7 @@ fun Sample() {
 
 @Composable
 fun StyleContainer(
-    state: RichTextState,
+    state: RichEditorState,
 ) {
     Row(
         Modifier
@@ -116,11 +128,12 @@ fun StyleContainer(
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
-                state.reset()
+                Log.d("XXX", "json ${state.output()}")
+                // state.reset()
             },
         ) {
             Icon(
-                Icons.Default.Refresh, contentDescription = null,
+                Icons.Default.Check, contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -128,9 +141,10 @@ fun StyleContainer(
     }
 }
 
+
 @Composable
 fun TitleStyleButton(
-    value: RichTextState
+    value: RichEditorState
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -206,7 +220,7 @@ fun DropDownItem(
 fun StyleButton(
     @DrawableRes icon: Int,
     style: TextSpanStyle,
-    value: RichTextState,
+    value: RichEditorState,
 ) {
     IconButton(
         modifier = Modifier

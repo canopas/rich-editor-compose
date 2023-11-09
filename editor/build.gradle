@@ -3,6 +3,13 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+ext {
+    PUBLISH_GROUP_ID = 'com.canopas.editor'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'rich-editor-compose'
+}
+apply from: "${rootDir}/scripts/publish-module.gradle"
+
 android {
     namespace 'com.canopas.editor'
     compileSdk 34
@@ -42,6 +49,11 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -68,6 +80,5 @@ dependencies {
     implementation 'androidx.media3:media3-ui:1.1.0'
     implementation 'androidx.media3:media3-exoplayer:1.1.0'
 
-    implementation 'com.google.code.gson:gson:2.10.1'
 
 }
