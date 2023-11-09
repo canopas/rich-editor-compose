@@ -5,6 +5,7 @@ Android WYSIWYG Rich editor for Jetpack compose.
 <img src="./gif/sample.gif" height="540" />
 
 ## Features
+
 The editor offers the following <b>options</b>:
 
 - [x] **Bold**
@@ -12,7 +13,15 @@ The editor offers the following <b>options</b>:
 - [x] <u>Underline</u>
 - [x] Different Heading
 
-## How to use it?
+## How to add in your project
+
+Add the dependency
+
+```gradle
+ implementation 'com.canopas.editor:rich-editor-compose:X.X.X'
+```
+
+## How to use ?
 
 ```
 @Composable
