@@ -130,16 +130,15 @@ class RichTextManager(richText: RichText) {
         if (text.isEmpty()) return
         val fromIndex = selection.min
         val toIndex = if (selection.collapsed) fromIndex else selection.max
+
         val startIndex: Int = max(0, text.lastIndexOf("\n", fromIndex - 1))
         var endIndex: Int = text.indexOf("\n", toIndex)
 
         if (endIndex == -1) endIndex = text.length - 1
-        val selectedParts = spans.filter { part ->
-            part.from < toIndex && part.to >= fromIndex && part.style.isHeaderStyle()
-        }
+        val selectedParts =
+            spans.filter { endIndex >= it.to && startIndex <= it.from && it.style.isHeaderStyle() }
 
-        removeStylesFromSelectedPart(selectedParts, startIndex, endIndex)
-
+        spans.removeAll(selectedParts)
         spans.add(
             RichTextSpan(
                 from = startIndex,
@@ -147,7 +146,6 @@ class RichTextManager(richText: RichText) {
                 style = style
             )
         )
-
         updateText()
     }
 
