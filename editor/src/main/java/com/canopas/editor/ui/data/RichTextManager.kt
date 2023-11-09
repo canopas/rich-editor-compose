@@ -21,18 +21,15 @@ class RichTextManager(richText: RichText) {
 
     private var selection = TextRange(0, 0)
     private val currentStyles = mutableStateListOf<TextSpanStyle>()
-    private var rawText: String = ""
+    private var rawText: String = richText.text
 
-    val richText: RichText
+    internal val richText: RichText
         get() = RichText(editableText, spans)
 
-
-    init {
-        updateText()
-    }
-
     internal fun setEditable(editable: Editable) {
+        editable.append(editableText)
         this.editable = editable
+        if (editableText.isNotEmpty()) updateText()
     }
 
     private fun updateText() {

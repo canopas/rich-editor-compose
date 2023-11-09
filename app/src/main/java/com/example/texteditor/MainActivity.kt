@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,9 +64,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Sample() {
     TextEditorTheme {
+        val context = LocalContext.current
+
         val state = remember {
+            val input =
+                context.assets.open("sample-data.json").bufferedReader().use { it.readText() }
             RichEditorState.Builder()
-                .setInput("")
+                .setInput(input)
                 .adapter(JsonEditorParser())
                 .build()
         }
@@ -123,18 +128,19 @@ fun StyleContainer(
                 .padding(2.dp)
                 .size(48.dp),
             onClick = {
-                Log.d("XXX", "json ${state.clone()}")
+                Log.d("XXX", "json ${state.output()}")
                 // state.reset()
             },
         ) {
             Icon(
-                Icons.Default.Refresh, contentDescription = null,
+                Icons.Default.Check, contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )
         }
 
     }
 }
+
 
 @Composable
 fun TitleStyleButton(
