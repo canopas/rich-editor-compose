@@ -46,6 +46,7 @@ val spanStyleParserMap = mapOf(
     "bold" to TextSpanStyle.BoldStyle,
     "italic" to TextSpanStyle.ItalicStyle,
     "underline" to TextSpanStyle.UnderlineStyle,
+    "bullet" to TextSpanStyle.BulletStyle,
     "h1" to TextSpanStyle.H1Style,
     "h2" to TextSpanStyle.H2Style,
     "h3" to TextSpanStyle.H3Style,

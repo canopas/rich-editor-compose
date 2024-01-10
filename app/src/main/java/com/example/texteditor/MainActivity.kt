@@ -123,6 +123,12 @@ fun StyleContainer(
             value = state,
         )
 
+        StyleButton(
+            icon = R.drawable.baseline_format_list_bulleted_24,
+            style = TextSpanStyle.BulletStyle,
+            value = state,
+        )
+
         IconButton(
             modifier = Modifier
                 .padding(2.dp)

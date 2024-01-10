@@ -1,6 +1,7 @@
 package com.canopas.editor.ui.utils
 
 import android.graphics.Typeface
+import android.text.style.BulletSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -55,6 +56,19 @@ sealed interface TextSpanStyle {
             get() = "underline"
         override val style: Any
             get() = UnderlineSpan()
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Default) return false
+            return key == other.key
+        }
+    }
+
+    object BulletStyle : TextSpanStyle {
+        override val key: String
+            get() = "bullet"
+        override val style: Any
+            get() = BulletSpan(16)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

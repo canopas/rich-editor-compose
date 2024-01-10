@@ -2,6 +2,7 @@ package com.canopas.editor.ui.data
 
 import android.text.Editable
 import android.text.Spannable
+import android.text.style.BulletSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -36,7 +37,7 @@ class RichTextManager(richText: RichText) {
         editable.removeSpans<RelativeSizeSpan>()
         editable.removeSpans<StyleSpan>()
         editable.removeSpans<UnderlineSpan>()
-
+        editable.removeSpans<BulletSpan>()
         spans.forEach {
             editable.setSpan(
                 it.style.style,
@@ -256,16 +257,16 @@ class RichTextManager(richText: RichText) {
     }
 
     private fun handleAddingCharacters(newValue: Editable) {
-        val typedChars = newValue.length - rawText.length
-        val startTypeIndex = selection.min - typedChars
+        val typedCharsCount = newValue.length - rawText.length
+        val startTypeIndex = selection.min - typedCharsCount
 
-        if (newValue.getOrNull(startTypeIndex) == '\n' && currentStyles.any { it.isHeaderStyle() }) {
+        if (newValue.getOrNull(startTypeIndex) == '\n' && currentStyles.any { it.isHeaderStyle() || it == TextSpanStyle.BulletStyle }) {
             currentStyles.clear()
         }
 
         val selectedStyles = currentStyles.toMutableList()
 
-        moveSpans(startTypeIndex, typedChars)
+        moveSpans(startTypeIndex, typedCharsCount)
 
         val startParts = spans.filter { startTypeIndex - 1 in it.from..it.to }
         val endParts = spans.filter { startTypeIndex in it.from..it.to }
@@ -275,21 +276,21 @@ class RichTextManager(richText: RichText) {
             .forEach {
                 if (selectedStyles.contains(it.style)) {
                     val index = spans.indexOf(it)
-                    spans[index] = it.copy(to = it.to + typedChars)
+                    spans[index] = it.copy(to = it.to + typedCharsCount)
                     selectedStyles.remove(it.style)
                 }
             }
 
         endParts.filter { it !in commonParts }
-            .forEach { processSpan(it, typedChars, startTypeIndex, selectedStyles, true) }
+            .forEach { processSpan(it, typedCharsCount, startTypeIndex, selectedStyles, true) }
 
-        commonParts.forEach { processSpan(it, typedChars, startTypeIndex, selectedStyles) }
+        commonParts.forEach { processSpan(it, typedCharsCount, startTypeIndex, selectedStyles) }
 
         selectedStyles.forEach {
             spans.add(
                 RichTextSpan(
                     from = startTypeIndex,
-                    to = startTypeIndex + typedChars - 1,
+                    to = startTypeIndex + typedCharsCount - 1,
                     style = it
                 )
             )
