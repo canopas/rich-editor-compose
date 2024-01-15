@@ -1,6 +1,7 @@
 package com.canopas.editor.ui.utils
 
 import android.graphics.Typeface
+import android.os.Build
 import android.text.style.BulletSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
@@ -68,7 +69,12 @@ sealed interface TextSpanStyle {
         override val key: String
             get() = "bullet"
         override val style: Any
-            get() = BulletSpan(16)
+            get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    BulletSpan(16, android.graphics.Color.BLACK, 8)
+                } else {
+                    BulletSpan(16)
+                }
+
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

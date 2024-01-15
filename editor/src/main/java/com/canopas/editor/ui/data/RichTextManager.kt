@@ -60,7 +60,30 @@ class RichTextManager(richText: RichText) {
             getRichSpanListByTextRange(selection).distinct()
         }
 
-        this.currentStyles.addAll(currentStyles)
+        val currentSpan =
+            spans.findLast {
+                it.from <= selection.min - 2 && it.to >= selection.min - 2 && it.style == TextSpanStyle.BulletStyle
+            }
+
+        if (currentSpan != null) {
+            if (
+                currentSpan.style == TextSpanStyle.BulletStyle &&
+                editable[selection.min - 1] == '\n' &&
+                editable[selection.min - 2] != '\n'
+            ) {
+                this.currentStyles.add(TextSpanStyle.BulletStyle)
+            } else if (
+                currentSpan.style == TextSpanStyle.BulletStyle &&
+                editable[selection.min - 1] == '\n' &&
+                editable[selection.min - 2] == '\n'
+            ) {
+                removeStyle(TextSpanStyle.BulletStyle)
+            } else {
+                this.currentStyles.addAll(currentStyles)
+            }
+        } else {
+            this.currentStyles.addAll(currentStyles)
+        }
     }
 
     private fun getRichSpanByTextIndex(textIndex: Int): List<TextSpanStyle> {
