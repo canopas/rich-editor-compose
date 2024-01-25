@@ -41,23 +41,31 @@ fun RichEditor(
                 override fun sendAccessibilityEvent(host: View, eventType: Int) {
                     super.sendAccessibilityEvent(host, eventType)
                     if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
-                        state.manager.adjustSelection(
-                            TextRange(editText.selectionStart, editText.selectionEnd)
+                        state.manager.forEach {
+                            it.adjustSelection(
+                                TextRange(editText.selectionStart, editText.selectionEnd)
+                            )
+                        }
+                    }
+                }
+            }
+
+            editText.doAfterTextChanged { changedText ->
+                changedText?.let { editable ->
+                    state.manager.forEach {
+                        it.onTextFieldValueChange(
+                            editable, TextRange(editText.selectionStart, editText.selectionEnd)
                         )
                     }
                 }
             }
 
-            editText.doAfterTextChanged { editable ->
-                editable?.let {
-                    state.manager.onTextFieldValueChange(
-                        it, TextRange(editText.selectionStart, editText.selectionEnd)
-                    )
-                }
+            state.manager.forEach {
+                it.setEditable(editText.text, state.manager.flatMap { it.richText.spans }.toMutableList())
             }
-
-            state.manager.setEditable(editText.text)
-            state.manager.adjustSelection(TextRange(editText.selectionStart, editText.selectionEnd))
+            state.manager.forEach {
+                it.adjustSelection(TextRange(editText.selectionStart, editText.selectionEnd))
+            }
             editText
         })
     }

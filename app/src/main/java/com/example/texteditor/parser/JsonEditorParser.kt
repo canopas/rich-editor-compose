@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken
 class JsonEditorParser : EditorAdapter {
 
     private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(RichText::class.java, RichTextAdapter())
         .registerTypeAdapter(RichTextSpan::class.java, RichTextSpanAdapter())
         .create()
 

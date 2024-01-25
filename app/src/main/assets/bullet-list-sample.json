@@ -116,12 +116,12 @@
       "spans": [
         {
           "from": 0,
-          "to": 5,
+          "to": 3,
           "style": "bold"
         },
         {
-          "from": 0,
-          "to": 5,
+          "from": 5,
+          "to": 8,
           "style": "italic"
         }
       ],
@@ -132,12 +132,12 @@
       "spans": [
         {
           "from": 0,
-          "to": 3,
+          "to": 6,
           "style": "bold"
         },
         {
           "from": 0,
-          "to": 3,
+          "to": 6,
           "style": "underline"
         }
       ],
@@ -148,17 +148,17 @@
       "spans": [
         {
           "from": 0,
-          "to": 2,
+          "to": 6,
           "style": "bold"
         },
         {
-          "from": 0,
-          "to": 2,
+          "from": 8,
+          "to": 16,
           "style": "italic"
         },
         {
-          "from": 0,
-          "to": 3,
+          "from": 8,
+          "to": 16,
           "style": "underline"
         }
       ],
@@ -169,11 +169,11 @@
       "spans": [
         {
           "from": 0,
-          "to": 4,
+          "to": 10,
           "style": "h1"
         }
       ],
-      "text": "Thank You Android! ☺️\n"
+      "text": "Thanks You Android! ☺️\n"
     }
   ]
 }

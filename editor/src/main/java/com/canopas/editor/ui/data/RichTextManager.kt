@@ -6,30 +6,35 @@ import android.text.style.BulletSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.TextRange
 import com.canopas.editor.ui.model.RichText
+import com.canopas.editor.ui.model.RichTextItem
 import com.canopas.editor.ui.model.RichTextSpan
 import com.canopas.editor.ui.utils.TextSpanStyle
 import kotlin.math.max
 import kotlin.math.min
 
-class RichTextManager(richText: RichText) {
+class RichTextManager(val richText: RichTextItem) {
 
     private var editable: Editable = Editable.Factory().newEditable(richText.text)
-    private val spans: MutableList<RichTextSpan> = richText.spans
+    private var spans: MutableList<RichTextSpan> = richText.spans
     private val editableText: String get() = editable.toString()
 
     private var selection = TextRange(0, 0)
     private val currentStyles = mutableStateListOf<TextSpanStyle>()
     private var rawText: String = richText.text
 
-    internal val richText: RichText
-        get() = RichText(editableText, spans)
+    internal val richTextItem: RichText
+        get() = RichText(
+            mutableListOf(richText)
+        )
 
-    internal fun setEditable(editable: Editable) {
+    internal fun setEditable(editable: Editable, spans: MutableList<RichTextSpan>) {
         editable.append(editableText)
         this.editable = editable
+        this.spans = spans.toMutableList()
         if (editableText.isNotEmpty()) updateText()
     }
 
@@ -38,13 +43,17 @@ class RichTextManager(richText: RichText) {
         editable.removeSpans<StyleSpan>()
         editable.removeSpans<UnderlineSpan>()
         editable.removeSpans<BulletSpan>()
-        spans.forEach {
-            editable.setSpan(
-                it.style.style,
-                it.from,
-                it.to + 1,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+        try {
+            spans.forEach {
+                editable.setSpan(
+                    it.style.style,
+                    it.from,
+                    it.to + 1,
+                    Spannable.SPAN_INCLUSIVE_EXCLUSIVE
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("XXX", "Error: $e")
         }
 
         updateCurrentSpanStyle()
@@ -71,7 +80,7 @@ class RichTextManager(richText: RichText) {
                 editable[selection.min - 1] == '\n' &&
                 editable[selection.min - 2] != '\n'
             ) {
-                this.currentStyles.add(TextSpanStyle.BulletStyle)
+                addStyle(TextSpanStyle.BulletStyle)
             } else if (
                 currentSpan.style == TextSpanStyle.BulletStyle &&
                 editable[selection.min - 1] == '\n' &&
@@ -133,6 +142,10 @@ class RichTextManager(richText: RichText) {
     private fun addStyle(style: TextSpanStyle) {
         if (!currentStyles.contains(style)) {
             currentStyles.add(style)
+
+            if (style == TextSpanStyle.BulletStyle) {
+                editable.insert(selection.min, "\u200B")
+            }
         }
 
         if ((style.isHeaderStyle() || style.isDefault()) && selection.collapsed) {

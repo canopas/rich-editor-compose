@@ -9,10 +9,10 @@ interface EditorAdapter {
 
 class DefaultAdapter : EditorAdapter {
     override fun encode(input: String): RichText {
-        return RichText("")
+        return RichText(mutableListOf())
     }
 
     override fun decode(editorValue: RichText): String {
-        return editorValue.text
+        return editorValue.items.joinToString{ it.text }
     }
 }
