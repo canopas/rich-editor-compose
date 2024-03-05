@@ -14,11 +14,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.widget.doAfterTextChanged
-import com.canopas.editor.ui.data.RichEditorState
+import com.canopas.editor.ui.data.QuillEditorState
 
 @Composable
 fun RichEditor(
-    state: RichEditorState,
+    state: QuillEditorState,
     modifier: Modifier = Modifier,
 ) {
 
