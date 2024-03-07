@@ -2,8 +2,8 @@ package com.canopas.editor.ui.model
 
 import com.canopas.editor.ui.utils.TextSpanStyle
 
-data class RichTextSpan(
+data class QuillTextSpan(
     val from: Int,
     val to: Int,
-    val style: TextSpanStyle,
+    val style: List<TextSpanStyle>,
 )

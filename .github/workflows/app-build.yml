@@ -13,5 +13,7 @@ jobs:
           java-version: 17.0.6
           cache: 'gradle'
           distribution: adopt
+      - name: Run Tests
+        run: ./gradlew test
       - name: Build with Gradle
         run: ./gradlew build

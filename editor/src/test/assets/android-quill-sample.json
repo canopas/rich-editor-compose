@@ -1,0 +1,38 @@
+{
+  "spans": [
+    {
+      "insert": "RichEditor",
+      "attributes": {
+        "bold": true,
+        "header": 1
+      }
+    },
+    {
+      "insert": "\nf",
+        "attributes": {
+            "bold": true
+        }
+    },
+    {
+      "insert": "o",
+      "attributes": {}
+    },
+    {
+      "insert": "r ",
+        "attributes": {
+            "bold": true
+        }
+    },
+    {
+      "insert": "\nAndroid ",
+      "attributes": {}
+    },
+    {
+      "insert": "WYSIWYG ",
+      "attributes": {
+        "bold": true,
+        "italic": true
+      }
+    }
+  ]
+}
