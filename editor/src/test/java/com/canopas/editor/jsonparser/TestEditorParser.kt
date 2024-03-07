@@ -7,10 +7,10 @@ import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 
-class QuillJsonEditorParser : QuillEditorAdapter {
+class TestEditorParser : QuillEditorAdapter {
 
     private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(Span::class.java, QuillRichTextStateAdapter())
+        .registerTypeAdapter(Span::class.java, RichTextStateAdapter())
         .create()
 
     override fun encode(input: String): QuillSpan {

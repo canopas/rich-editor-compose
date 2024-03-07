@@ -98,6 +98,10 @@ class QuillTextManager(quillSpan: QuillSpan) {
             getRichSpanListByTextRange(selection).distinct()
         }
 
+        updateSpanStyle(currentStyles)
+    }
+
+    private fun updateSpanStyle(currentStyles: List<TextSpanStyle>) {
         val currentSpan = quillTextSpans.findLast {
             it.from <= selection.min - 2 && it.to >= selection.min - 2 && it.style.contains(
                 TextSpanStyle.BulletStyle
@@ -395,48 +399,60 @@ class QuillTextManager(quillSpan: QuillSpan) {
             when {
                 span.style == selectedStyles -> {
                     if (isBulletStyle && newValue.getOrNull(startTypeIndex) == '\n') {
-                        if (newValue.getOrNull(startTypeIndex - 1) != '\n' && startTypeIndex == to) {
-                            quillTextSpans.add(
-                                index + 1,
-                                span.copy(
-                                    from = startTypeIndex,
-                                    to = startTypeIndex + typedCharsCount - 1,
-                                    style = selectedStyles
-                                )
-                            )
-                            quillTextSpans.add(
-                                index + 2,
-                                span.copy(
-                                    from = startTypeIndex + typedCharsCount,
-                                    to = to + typedCharsCount,
-                                    style = selectedStyles
-                                )
-                            )
-                        } else {
-                            if (startTypeIndex in (from + 1) until to) {
-                                val newSpans = mutableListOf<QuillTextSpan>()
-                                newSpans.add(span.copy(to = startTypeIndex - 1, style = styles))
-                                newSpans.add(
-                                    span.copy(
-                                        from = startTypeIndex,
-                                        to = startTypeIndex + typedCharsCount - 1,
-                                        style = selectedStyles
+                        if (newValue.getOrNull(startTypeIndex - 1) != '\n') {
+                            when (startTypeIndex) {
+                                to -> {
+                                    quillTextSpans.add(
+                                        index + 1,
+                                        span.copy(
+                                            from = startTypeIndex,
+                                            to = startTypeIndex + typedCharsCount - 1,
+                                            style = selectedStyles
+                                        )
                                     )
-                                )
-                                newSpans.add(
-                                    span.copy(
-                                        from = startTypeIndex + typedCharsCount,
-                                        to = to + typedCharsCount,
-                                        style = styles
+                                    quillTextSpans.add(
+                                        index + 2,
+                                        span.copy(
+                                            from = startTypeIndex + typedCharsCount,
+                                            to = to + typedCharsCount,
+                                            style = selectedStyles
+                                        )
                                     )
-                                )
-                                quillTextSpans.removeAt(index)
-                                quillTextSpans.addAll(index, newSpans)
-                            } else {
-                                val updatedSpan = span.copy(to = to + typedCharsCount, style = selectedStyles)
-                                quillTextSpans[index] = updatedSpan
-                                quillTextSpans.add(index + 1, updatedSpan)
+                                }
+
+                                in (from + 1) until to -> {
+                                    val newSpans = mutableListOf<QuillTextSpan>()
+                                    newSpans.add(span.copy(to = startTypeIndex - 1, style = styles))
+                                    newSpans.add(
+                                        span.copy(
+                                            from = startTypeIndex,
+                                            to = startTypeIndex + typedCharsCount - 1,
+                                            style = selectedStyles
+                                        )
+                                    )
+                                    newSpans.add(
+                                        span.copy(
+                                            from = startTypeIndex + typedCharsCount,
+                                            to = to + typedCharsCount,
+                                            style = styles
+                                        )
+                                    )
+                                    quillTextSpans.removeAt(index)
+                                    quillTextSpans.addAll(index, newSpans)
+                                }
+
+                                else -> {
+                                    val updatedSpan =
+                                        span.copy(to = to + typedCharsCount, style = selectedStyles)
+                                    quillTextSpans[index] = updatedSpan
+                                    quillTextSpans.add(index + 1, updatedSpan)
+                                }
                             }
+                        } else {
+                            quillTextSpans[index] =
+                                span.copy(to = to + typedCharsCount, style = styles.filterNot {
+                                    it == TextSpanStyle.BulletStyle
+                                })
                         }
                     } else {
                         quillTextSpans[index] = span.copy(to = to + typedCharsCount, style = styles)

@@ -11,7 +11,7 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import java.lang.reflect.Type
 
-class QuillRichTextStateAdapter : JsonSerializer<Span>, JsonDeserializer<Span> {
+class RichTextStateAdapter : JsonSerializer<Span>, JsonDeserializer<Span> {
     override fun serialize(
         src: Span?,
         typeOfSrc: Type?,

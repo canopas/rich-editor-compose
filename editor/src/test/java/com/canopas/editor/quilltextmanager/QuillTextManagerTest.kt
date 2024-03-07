@@ -5,7 +5,7 @@ import android.text.Editable
 import androidx.compose.ui.text.TextRange
 import androidx.test.core.app.ApplicationProvider
 import com.canopas.editor.MainCoroutineRule
-import com.canopas.editor.jsonparser.QuillJsonEditorParser
+import com.canopas.editor.jsonparser.TestEditorParser
 import com.canopas.editor.ui.data.QuillEditorState
 import com.canopas.editor.ui.model.QuillTextSpan
 import com.canopas.editor.ui.utils.TextSpanStyle
@@ -35,7 +35,7 @@ class QuillTextManagerTest {
         editableInstance = Editable.Factory.getInstance()
         quillEditorState = QuillEditorState.Builder()
             .setInput(input)
-            .adapter(QuillJsonEditorParser())
+            .adapter(TestEditorParser())
             .build()
         sampleSpansListSize = quillEditorState.manager.quillTextSpans.size
     }
