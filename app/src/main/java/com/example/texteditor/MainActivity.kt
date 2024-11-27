@@ -39,10 +39,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.canopas.editor.ui.data.RichEditorState
+import com.canopas.editor.ui.data.QuillEditorState
 import com.canopas.editor.ui.ui.RichEditor
 import com.canopas.editor.ui.utils.TextSpanStyle
-import com.example.texteditor.parser.JsonEditorParser
+import com.example.texteditor.parser.QuillJsonEditorParser
 import com.example.texteditor.ui.theme.TextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -66,21 +66,21 @@ fun Sample() {
     TextEditorTheme {
         val context = LocalContext.current
 
-        val state = remember {
+        val quillState = remember {
             val input =
-                context.assets.open("sample-data.json").bufferedReader().use { it.readText() }
-            RichEditorState.Builder()
+                context.assets.open("android-quill-sample.json").bufferedReader().use { it.readText() }
+            QuillEditorState.Builder()
                 .setInput(input)
-                .adapter(JsonEditorParser())
+                .adapter(QuillJsonEditorParser())
                 .build()
         }
 
         Column {
 
-            StyleContainer(state)
+            StyleContainer(quillState)
 
             RichEditor(
-                state = state,
+                state = quillState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -94,7 +94,7 @@ fun Sample() {
 
 @Composable
 fun StyleContainer(
-    state: RichEditorState,
+    state: QuillEditorState,
 ) {
     Row(
         Modifier
@@ -123,6 +123,12 @@ fun StyleContainer(
             value = state,
         )
 
+        StyleButton(
+            icon = R.drawable.baseline_format_list_bulleted_24,
+            style = TextSpanStyle.BulletStyle,
+            value = state,
+        )
+
         IconButton(
             modifier = Modifier
                 .padding(2.dp)
@@ -144,7 +150,7 @@ fun StyleContainer(
 
 @Composable
 fun TitleStyleButton(
-    value: RichEditorState
+    value: QuillEditorState
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -220,7 +226,7 @@ fun DropDownItem(
 fun StyleButton(
     @DrawableRes icon: Int,
     style: TextSpanStyle,
-    value: RichEditorState,
+    value: QuillEditorState,
 ) {
     IconButton(
         modifier = Modifier
