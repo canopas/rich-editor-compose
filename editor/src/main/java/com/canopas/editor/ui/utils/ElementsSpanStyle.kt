@@ -1,6 +1,9 @@
 package com.canopas.editor.ui.utils
 
+import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
+import android.text.style.BulletSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -63,6 +66,23 @@ sealed interface TextSpanStyle {
         }
     }
 
+    object BulletStyle : TextSpanStyle {
+        override val key: String
+            get() = "bullet"
+        override val style: Any
+            get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                BulletSpan(16, Color.BLACK, 8)
+            } else {
+                BulletSpan(16)
+            }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Default) return false
+            return key == other.key
+        }
+    }
+
     object H1Style : TextSpanStyle {
         override val key: String
             get() = "h1"
@@ -79,7 +99,7 @@ sealed interface TextSpanStyle {
 
     object H2Style : TextSpanStyle {
         override val key: String
-            get() = "h3"
+            get() = "h2"
         override val style: Any
             get() = RelativeSizeSpan(1.4f)
 
@@ -140,5 +160,16 @@ sealed interface TextSpanStyle {
             if (other !is Default) return false
             return key == other.key
         }
+    }
+
+    object HeaderMap {
+        internal val headerMap = mapOf(
+            "1" to H1Style,
+            "2" to H2Style,
+            "3" to H3Style,
+            "4" to H4Style,
+            "5" to H5Style,
+            "6" to H6Style
+        )
     }
 }

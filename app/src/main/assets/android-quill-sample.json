@@ -1,0 +1,165 @@
+{
+  "spans": [
+    {
+      "insert": "RichEditor",
+      "attributes": {
+        "bold": true,
+        "header": 1
+      }
+    },
+    {
+      "insert": "\nAndroid ",
+      "attributes": {}
+    },
+    {
+      "insert": "WYSIWYG ",
+      "attributes": {
+        "bold": true,
+        "italic": true
+      }
+    },
+    {
+      "insert": "Rich editor for ",
+      "attributes": {}
+    },
+    {
+      "insert": "Jetpack compose.\n\n",
+      "attributes": {
+        "bold": true,
+        "underline": true
+      }
+    },
+    {
+      "insert": "Features",
+      "attributes": {
+        "bold": true,
+        "header": 3
+      }
+    },
+    {
+      "insert": "\nThe editor offers the following ",
+      "attributes": {}
+    },
+    {
+      "insert": "options:\n",
+      "attributes": {
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
+    {
+      "insert": "\n",
+      "attributes": {}
+    },
+    {
+      "insert": "Bold\n",
+      "attributes": {
+        "bold": true
+      }
+    },
+    {
+      "insert": "Italic\n",
+      "attributes": {
+        "italic": true
+      }
+    },
+    {
+      "insert": "Underline\n",
+      "attributes": {
+        "underline": true
+      }
+    },
+    {
+      "insert": "Different ",
+      "attributes": {}
+    },
+    {
+      "insert": "Headings\n\n",
+      "attributes": {
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
+    {
+      "insert": "Bullet List:\n",
+      "attributes": {
+        "bold": true
+      }
+    },
+    {
+      "insert": "Item 1\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "Item 2\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "Item 3\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "Item 4\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "Item 5\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "Item 6\n",
+      "attributes": {
+        "list": "bullet"
+      }
+    },
+    {
+      "insert": "\n",
+      "attributes": {}
+    },
+    {
+      "insert": "Credits",
+      "attributes": {
+        "bold": true,
+        "header": 3
+      }
+    },
+    {
+      "insert": "\n\n",
+      "attributes": {}
+    },
+    {
+      "insert": "RichEditor ",
+      "attributes": {
+        "bold": true
+      }
+    },
+    {
+      "insert": "for compose is developed and maintained by the ",
+      "attributes": {}
+    },
+    {
+      "insert": "canopas team.\n\n",
+      "attributes": {
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
+    {
+      "insert": "Thank You! 😊\n\n",
+      "attributes": {}
+    }
+  ]
+}
