@@ -56,7 +56,7 @@ For bugs, questions and discussions please use the [Github Issues](https://githu
 
 
 ## Credits
-RichEditor for compose is owned and maintained by the [Canopas team](https://canopas.com/). For project updates and releases, you can follow them on X at [@canopas_eng](https://x.com/canopas_eng).
+RichEditor for compose is owned and maintained by the [Canopas team](https://canopas.com/). For project updates and releases, you can follow them on X at [@canopassoftware](https://x.com/canopassoftware).
 
 ComposeRichEditor: https://github.com/MohamedRejeb/Compose-Rich-Editor
 
